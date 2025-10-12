@@ -5,10 +5,12 @@ import Navbar from "../../components/NavbarComponents/Navbar";
 import FooterNavbar from "../../components/NavbarComponents/FooterNavbar";
 import backgroundimage from "../../images/backgroundimage.png";
 import UserContext from "../../contexts/User/UserContext";
+import AuthContext from "../../contexts/Auth/AuthContext";
 import NotificationContext from "../../contexts/Notification/NotificationContext";
 
 export default function Setting() {
   const { userInfo, updateUserDetails, fetchUserInfo } = useContext(UserContext);
+  const { login } = useContext(AuthContext);
   const { notifyError } = useContext(NotificationContext);
   const navigate = useNavigate();
 
@@ -26,26 +28,29 @@ export default function Setting() {
     phoneNumber: "",
   });
 
-  // Fetch user info on page load
-  useEffect(() => {
-    const loadUserInfo = async () => {
-      await fetchUserInfo();
-    };
-    loadUserInfo();
-  }, []);
+  ///Fetch user info on page load
+  // useEffect(() => {
+  //   const loadUserInfo = async () => {
+  //     await fetchUserInfo();
+  //   };
+  //   loadUserInfo();
+  // }, []);
 
-  // Autofill form when userInfo changes
   useEffect(() => {
-    if (!userInfo || !userInfo.isLogin) {
-      navigate("/"); // redirect if no user
-    } else {
+    if (!login) {
+      navigate("/");
+    }
+  }, [login]);
+
+  useEffect(() => {
+    if (userInfo) {
       setFormData({
         firstName: userInfo.firstName || "",
         lastName: userInfo.lastName || "",
         phoneNumber: userInfo.phoneNumber || "",
       });
     }
-  }, [userInfo, navigate]);
+  }, [userInfo]);
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));

@@ -5,7 +5,6 @@ import NotificationContext from "../Notification/NotificationContext";
 
 export default function AuthProvider({ children }) {
   const [userDetails, setUserDetails] = useState({
-    isLogin: false,
     userId: null,
     token: null,
     userName: null,
@@ -15,11 +14,12 @@ export default function AuthProvider({ children }) {
     firstLogin: null,
   });
 
+  const [login, setLogin] = useState(false);
+
   const { notifySuccess, notifyError } = useContext(NotificationContext);
 
   const cleanAllData = () => {
     setUserDetails({
-      isLogin: false,
       userId: null,
       token: null,
       userName: null,
@@ -28,6 +28,7 @@ export default function AuthProvider({ children }) {
       roles: null,
       firstLogin: null,
     });
+    setLogin(false);
   };
 
   // ------------------- HELPER: fetch with retry -------------------
@@ -73,8 +74,8 @@ export default function AuthProvider({ children }) {
 
       if (data.success) {
         const res = data.response;
+        setLogin(true);
         setUserDetails({
-          isLogin: true,
           userId: res.userId,
           token: res.token,
           userName: res.userName,
@@ -138,18 +139,9 @@ export default function AuthProvider({ children }) {
     window.location.href = "/";
   };
 
-  // ------------------- LOCALSTORAGE PERSIST -------------------
-  useEffect(() => {
-    if (userDetails.isLogin) {
-      localStorage.setItem("userDetails", JSON.stringify(userDetails));
-    } else {
-      localStorage.removeItem("userDetails");
-    }
-  }, [userDetails]);
-
   return (
     <AuthContext.Provider
-      value={{ userDetails, loginFunction, signupFunction, updateUserFunction, logout }}
+      value={{ login, userDetails, loginFunction, signupFunction, updateUserFunction, logout }}
     >
       {children}
     </AuthContext.Provider>

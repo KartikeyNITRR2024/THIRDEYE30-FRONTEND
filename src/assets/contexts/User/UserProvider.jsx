@@ -5,7 +5,7 @@ import Backend from "../../properties/Backend";
 import NotificationContext from "../Notification/NotificationContext";
 
 export default function UserProvider({ children }) {
-  const { userDetails } = useContext(AuthContext); // from AuthProvider
+  const { userDetails, login } = useContext(AuthContext);
   const [userInfo, setUserInfo] = useState(null);
   const { notifySuccess, notifyError } = useContext(NotificationContext);
 
@@ -108,16 +108,12 @@ export default function UserProvider({ children }) {
     }
   };
 
-  // ------------------- LOAD FROM AUTH OR LOCALSTORAGE -------------------
+  // // ------------------- LOAD FROM AUTH OR LOCALSTORAGE -------------------
   useEffect(() => {
-    if (userDetails && userDetails.isLogin) {
-      fetchUserInfo(); // fetch fresh data from backend
-    } else {
-      const storedUser = localStorage.getItem("userDetails");
-      if (storedUser) setUserInfo(JSON.parse(storedUser));
-      else setUserInfo(null);
-    }
-  }, [userDetails]);
+    if (login) {
+      fetchUserInfo();
+    } 
+  }, [login]);
 
   return (
     <UserContext.Provider value={{ userInfo, fetchUserInfo, updateUserDetails }}>

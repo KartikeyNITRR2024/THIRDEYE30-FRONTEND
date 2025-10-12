@@ -12,14 +12,14 @@ export default function MarketThresold() {
   const [page, setPage] = useState("group");
   const [selectedGroup, setSelectedGroup] = useState(null);
 
-  const { userDetails, isLogin } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!userDetails || !userDetails.isLogin) {
-      navigate("/", { replace: true });
+    if (!login) {
+      navigate("/");
     }
-  }, [isLogin, userDetails, navigate]);
+  }, [login]);
 
   const handleGroupClick = (group) => {
     setSelectedGroup(group);

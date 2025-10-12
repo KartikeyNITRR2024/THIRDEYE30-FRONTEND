@@ -8,19 +8,20 @@ import NotificationContext from "../contexts/Notification/NotificationContext";
 import { FaLinkedin, FaGithub, FaEnvelope } from "react-icons/fa";
 
 export default function Login() {
-  const { userDetails, loginFunction } = useContext(AuthContext);
+  const { login, userDetails, loginFunction } = useContext(AuthContext);
   const { notifyError } = useContext(NotificationContext);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({ userName: "", password: "" });
   const [loading, setLoading] = useState(false);
 
-  // ✅ Automatically redirect if user already logged in
   useEffect(() => {
-    if (userDetails?.isLogin) {
-      navigate(userDetails.firstLogin ? "/setting" : "/marketthresold");
+    if (login && userDetails) {
+      const path = userDetails.firstLogin ? "/setting" : "/marketthresold";
+      navigate(path, { replace: true });
     }
-  }, [userDetails?.isLogin, userDetails?.firstLogin, navigate]);
+  }, [login, userDetails, navigate]);
+
 
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
