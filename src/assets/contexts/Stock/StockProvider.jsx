@@ -5,7 +5,7 @@ import Backend from "../../properties/Backend";
 import StockContext from "./StockContext";
 
 export default function StockProvider({ children }) {
-  const { userDetails } = useContext(AuthContext);
+  const { userDetails, login } = useContext(AuthContext);
   const { notifyError } = useContext(NotificationContext);
 
   const [stocks, setStocks] = useState([]);
@@ -60,8 +60,8 @@ export default function StockProvider({ children }) {
   };
 
   useEffect(() => {
-    if (userDetails?.isLogin) fetchStocks();
-  }, [userDetails]);
+    if (login) fetchStocks();
+  }, [login]);
 
   return (
     <StockContext.Provider value={{ stocks, loading, fetchStocks }}>

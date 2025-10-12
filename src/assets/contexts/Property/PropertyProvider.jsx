@@ -5,7 +5,7 @@ import NotificationContext from "../Notification/NotificationContext";
 import Backend from "../../properties/Backend";
 
 const PropertyProvider = ({ children }) => {
-  const { userDetails } = useContext(AuthContext);
+  const { login, userDetails } = useContext(AuthContext);
   const { notifySuccess, notifyError } = useContext(NotificationContext);
 
   const [properties, setProperties] = useState({
@@ -77,8 +77,8 @@ const PropertyProvider = ({ children }) => {
 
   // Fetch properties on mount or when token changes
   useEffect(() => {
-    if (userDetails?.token) fetchProperties();
-  }, [userDetails?.token]);
+    if (login) fetchProperties();
+  }, [login]);
 
   return (
     <PropertyContext.Provider value={{ properties, loading, fetchProperties }}>

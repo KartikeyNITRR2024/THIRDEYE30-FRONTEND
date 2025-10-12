@@ -5,7 +5,7 @@ import Backend from "../../../properties/Backend";
 import NotificationContext from "../../Notification/NotificationContext";
 
 export default function ThresoldGroupProvider({ children }) {
-  const { userDetails } = useContext(AuthContext);
+  const { userDetails, login } = useContext(AuthContext);
   const { notifyError, notifySuccess } = useContext(NotificationContext);
 
   const [groups, setGroups] = useState([]);
@@ -70,9 +70,6 @@ export default function ThresoldGroupProvider({ children }) {
       );
 
       const data = await response.json();
-
-              console.log("HELLO");
-        console.log(data.response);
         
       if (data.success) {
 
@@ -188,8 +185,8 @@ export default function ThresoldGroupProvider({ children }) {
   };
 
   useEffect(() => {
-    if (userDetails?.isLogin) fetchThresoldGroups();
-  }, [userDetails]);
+    if (login) fetchThresoldGroups();
+  }, [login]);
 
   return (
     <ThresoldGroupContext.Provider
