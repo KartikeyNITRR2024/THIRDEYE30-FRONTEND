@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react"; 
+import React, { useState, useEffect, useContext } from "react";
 import ThresoldGroupContext from "./ThresoldGroupContext";
 import AuthContext from "../../Auth/AuthContext";
 import Backend from "../../../properties/Backend";
@@ -7,6 +7,7 @@ import NotificationContext from "../../Notification/NotificationContext";
 export default function ThresoldGroupProvider({ children }) {
   const { userDetails } = useContext(AuthContext);
   const { notifyError, notifySuccess } = useContext(NotificationContext);
+
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -21,10 +22,7 @@ export default function ThresoldGroupProvider({ children }) {
           `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/user/${userDetails.userId}`,
           {
             method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              token: userDetails.token,
-            },
+            headers: { "Content-Type": "application/json", token: userDetails.token },
           }
         );
 
@@ -58,7 +56,7 @@ export default function ThresoldGroupProvider({ children }) {
       groupName: newGroup.groupName,
       active: true,
       allStocks: false,
-      stockList: ""
+      stockList: "",
     };
 
     try {
@@ -66,17 +64,18 @@ export default function ThresoldGroupProvider({ children }) {
         `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/user/${userDetails.userId}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            token: userDetails.token,
-          },
+          headers: { "Content-Type": "application/json", token: userDetails.token },
           body: JSON.stringify(payload),
         }
       );
 
       const data = await response.json();
 
+              console.log("HELLO");
+        console.log(data.response);
+        
       if (data.success) {
+
         setGroups((prev) => [...prev, { ...payload, id: data.response?.id || Date.now() }]);
         notifySuccess("Group created successfully!");
       } else {
@@ -96,10 +95,7 @@ export default function ThresoldGroupProvider({ children }) {
         `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
         {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            token: userDetails.token,
-          },
+          headers: { "Content-Type": "application/json", token: userDetails.token },
         }
       );
       const data = await response.json();
@@ -113,45 +109,57 @@ export default function ThresoldGroupProvider({ children }) {
   };
 
   // ---------------- UPDATE GROUP STATUS ----------------
-  const updateGroupStatus = async (groupId, newActiveStatus) => {
-  if (!userDetails?.userId || !userDetails?.token) return;
-  const currentGroup = groups.find((g) => g.id === groupId);
-  if (!currentGroup) return;
+  const updateGroupStatus = async (groupId, newActiveStatus, allStocks, stockList) => {
+    if (!userDetails?.userId || !userDetails?.token) return;
 
-  const payload = {
-    groupName: currentGroup.groupName,
-    active: newActiveStatus,
-    allStocks: currentGroup.allStocks,
-    stockList: currentGroup.stockList
-  };
+    const currentGroup = groups.find((g) => g.id === groupId);
+    if (!currentGroup) return;
 
-  try {
-    const response = await fetch(
-      `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
-      {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          token: userDetails.token,
-        },
-        body: JSON.stringify(payload),
-      }
-    );
 
-    const data = await response.json();
+      console.log(currentGroup);
 
-    if (data.success) {
-      setGroups((prev) =>
-        prev.map((g) => (g.id === groupId ? { ...g, active: newActiveStatus } : g))
+    const payload = {
+      groupName: currentGroup.groupName,
+      active: newActiveStatus !== undefined ? newActiveStatus : currentGroup.active,
+      allStocks: allStocks !== undefined ? allStocks : currentGroup.allStocks,
+      stockList: stockList !== undefined ? stockList : currentGroup.stockList || "",
+    };
+
+        console.log(payload);
+
+    try {
+      const response = await fetch(
+        `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", token: userDetails.token },
+          body: JSON.stringify(payload),
+        }
       );
-      notifySuccess(`Group ${newActiveStatus ? "activated" : "paused"} successfully!`);
-    } else {
-      notifyError(data.errorMessage || "Failed to update group status");
+
+      const data = await response.json();
+
+      if (data.success) {
+        setGroups((prev) =>
+          prev.map((g) =>
+            g.id === groupId
+              ? {
+                  ...g,
+                  active: newActiveStatus !== undefined ? newActiveStatus : g.active,
+                  allStocks: allStocks !== undefined ? allStocks : g.allStocks,
+                  stockList: stockList !== undefined ? stockList : g.stockList || "",
+                }
+              : g
+          )
+        );
+        notifySuccess("Group updated successfully!");
+      } else {
+        notifyError(data.errorMessage || "Failed to update group status");
+      }
+    } catch (err) {
+      notifyError("Network error updating group status.");
     }
-  } catch (err) {
-    notifyError("Network error updating group status.");
-  }
-};
+  };
 
   // ---------------- DELETE GROUP ----------------
   const deleteGroup = async (groupId) => {
@@ -162,10 +170,7 @@ export default function ThresoldGroupProvider({ children }) {
         `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
         {
           method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            token: userDetails.token,
-          },
+          headers: { "Content-Type": "application/json", token: userDetails.token },
         }
       );
 
@@ -181,8 +186,6 @@ export default function ThresoldGroupProvider({ children }) {
       notifyError("Network error deleting group.");
     }
   };
-
-
 
   useEffect(() => {
     if (userDetails?.isLogin) fetchThresoldGroups();

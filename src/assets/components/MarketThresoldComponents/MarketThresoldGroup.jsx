@@ -28,7 +28,7 @@ export default function MarketThresoldGroup({ group, onBack }) {
   const handleToggleActive = async () => {
     if (!currentGroup) return;
     setUpdating(true);
-    await updateGroupStatus(currentGroup.id, !currentGroup.active);
+    await updateGroupStatus(currentGroup.id, !currentGroup.active, undefined, undefined);
     setCurrentGroup((prev) => ({ ...prev, active: !prev.active }));
     setUpdating(false);
   };
@@ -42,7 +42,11 @@ export default function MarketThresoldGroup({ group, onBack }) {
     onBack(); // Go back to group list
   };
 
-  const cardBaseClass = "aspect-square flex flex-col items-center justify-center bg-white rounded-2xl shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg";
+  const cardBaseClass =
+    "aspect-square flex flex-col items-center justify-center bg-white rounded-2xl shadow-md cursor-pointer transition-all duration-200 hover:shadow-lg";
+
+  const disabledCardClass =
+    "opacity-50 cursor-not-allowed pointer-events-none"; // visually disabled + non-clickable
 
   return (
     <div>
@@ -63,14 +67,18 @@ export default function MarketThresoldGroup({ group, onBack }) {
               <GiPlayButton className="text-4xl text-black mb-2" />
             )}
             <p className="text-lg font-semibold text-black">
-              {currentGroup?.active ? "Pause" : "Play"}
+              {currentGroup?.active ? "Active" : "Inactive"}
             </p>
           </div>
 
           {/* Threshold Card */}
           <div
-            onClick={() => setActiveTable("threshold")}
-            className={cardBaseClass}
+            onClick={() => {
+              if (currentGroup?.active) setActiveTable("threshold");
+            }}
+            className={`${cardBaseClass} ${
+              !currentGroup?.active ? disabledCardClass : ""
+            }`}
           >
             <SlGraph className="text-4xl text-black mb-2" />
             <p className="text-lg font-semibold text-black">Threshold</p>
@@ -78,8 +86,12 @@ export default function MarketThresoldGroup({ group, onBack }) {
 
           {/* Stock Card */}
           <div
-            onClick={() => setActiveTable("stock")}
-            className={cardBaseClass}
+            onClick={() => {
+              if (currentGroup?.active) setActiveTable("stock");
+            }}
+            className={`${cardBaseClass} ${
+              !currentGroup?.active ? disabledCardClass : ""
+            }`}
           >
             <RiStockLine className="text-4xl text-black mb-2" />
             <p className="text-lg font-semibold text-black">Stock</p>
@@ -87,8 +99,12 @@ export default function MarketThresoldGroup({ group, onBack }) {
 
           {/* Chat ID Card */}
           <div
-            onClick={() => setActiveTable("chat")}
-            className={cardBaseClass}
+            onClick={() => {
+              if (currentGroup?.active) setActiveTable("chat");
+            }}
+            className={`${cardBaseClass} ${
+              !currentGroup?.active ? disabledCardClass : ""
+            }`}
           >
             <PiTelegramLogoDuotone className="text-4xl text-black mb-2" />
             <p className="text-lg font-semibold text-black">Chat ID</p>
@@ -97,17 +113,18 @@ export default function MarketThresoldGroup({ group, onBack }) {
           {/* Delete Card */}
           <div
             onClick={() => setShowDeleteModal(true)}
-            className={`${cardBaseClass} ${deleting ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`${cardBaseClass} ${
+              deleting ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
             <MdDeleteOutline className="text-4xl text-black mb-2" />
-            <p className="text-lg font-semibold text-black">{deleting ? "Deleting..." : "Delete"}</p>
+            <p className="text-lg font-semibold text-black">
+              {deleting ? "Deleting..." : "Delete"}
+            </p>
           </div>
 
           {/* Back Card */}
-          <div
-            onClick={onBack}
-            className={cardBaseClass}
-          >
+          <div onClick={onBack} className={cardBaseClass}>
             <MdArrowBack className="text-4xl text-black mb-2" />
             <p className="text-lg font-semibold text-black">Back</p>
           </div>
@@ -124,11 +141,10 @@ export default function MarketThresoldGroup({ group, onBack }) {
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-lg w-80">
-            <h3 className="text-lg font-semibold mb-4 text-black">
-              Delete Group
-            </h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">Delete Group</h3>
             <p className="text-black mb-4">
-              Are you sure you want to delete "<span className="font-semibold">{currentGroup.groupName}</span>"?
+              Are you sure you want to delete{" "}
+              <span className="font-semibold">{currentGroup.groupName}</span>?
             </p>
             <div className="flex justify-end gap-2">
               <button
@@ -139,7 +155,11 @@ export default function MarketThresoldGroup({ group, onBack }) {
               </button>
               <button
                 onClick={handleDeleteGroup}
-                className={`px-3 py-1 rounded-lg text-white ${deleting ? "bg-gray-400 cursor-not-allowed" : "bg-red-500 hover:bg-red-600"}`}
+                className={`px-3 py-1 rounded-lg text-white ${
+                  deleting
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-red-500 hover:bg-red-600"
+                }`}
                 disabled={deleting}
               >
                 {deleting ? "Deleting..." : "Delete"}

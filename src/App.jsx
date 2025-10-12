@@ -9,7 +9,11 @@ import NotFound from "./assets/pages/NotFound";
 import NotificationProvider from "./assets/contexts/Notification/NotificationProvider"
 import AuthProvider from "./assets/contexts/Auth/AuthProvider" 
 import UserProvider from "./assets/contexts/User/UserProvider"
+import PropertyProvider from "./assets/contexts/Property/PropertyProvider"
 import ThresoldGroupProvider from "./assets/contexts/MarketThresold/ThresoldGroup/ThresoldGroupProvider"
+import ThresoldProvider from "./assets/contexts/MarketThresold/Thresold/ThresoldProvider"
+import ChatIDProvider from "./assets/contexts/MarketThresold/ChatID/ChatIDProvider"
+import StockProvider from "./assets/contexts/Stock/StockProvider";
 // New 404 page
 
 function App() {
@@ -37,11 +41,19 @@ export default function AppWrapper() {
     <BrowserRouter>
       <NotificationProvider>
         <AuthProvider>
-          <UserProvider>
-            <ThresoldGroupProvider>
-            <App />
-            </ThresoldGroupProvider>
-          </UserProvider>
+          <PropertyProvider>
+            <StockProvider>
+              <UserProvider>
+                <ThresoldProvider>
+                  <ChatIDProvider>
+                    <ThresoldGroupProvider>
+                    <App />
+                    </ThresoldGroupProvider>
+                  </ChatIDProvider>
+                </ThresoldProvider>
+              </UserProvider>
+            </StockProvider>
+          </PropertyProvider>
         </AuthProvider>
       </NotificationProvider>
     </BrowserRouter>
