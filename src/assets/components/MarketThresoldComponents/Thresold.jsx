@@ -3,6 +3,7 @@ import { MdArrowBack, MdDelete, MdAdd } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
 import PropertyContext from "../../contexts/Property/PropertyContext";
 import ThresoldContext from "../../contexts/MarketThresold/Thresold/ThresoldContext";
+import LoadingPage from "../LoadingComponents/LoadingPage";
 
 export default function Thresold({ group, onBack }) {
   const { properties } = useContext(PropertyContext);
@@ -14,7 +15,6 @@ export default function Thresold({ group, onBack }) {
     type: 0,
   });
 
-  // Fetch thresholds when group changes
   useEffect(() => {
     if (group?.id) fetchThresholds(group.id);
   }, [group?.id]);
@@ -55,14 +55,14 @@ export default function Thresold({ group, onBack }) {
             onClick={onBack}
             className="flex items-center gap-1 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition text-sm md:text-base"
           >
-            <MdArrowBack size={20} />
-            Back
+            <MdArrowBack size={20} /> Back
           </button>
           <div className="w-10"></div>
         </div>
 
+        {/* Loading or Table */}
         {loading ? (
-          <div className="text-center py-10">Loading thresholds...</div>
+          <LoadingPage />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full table-auto border-collapse text-center text-sm md:text-base">
@@ -76,7 +76,6 @@ export default function Thresold({ group, onBack }) {
               </thead>
               <tbody>
                 <AnimatePresence>
-                  {/* Existing thresholds */}
                   {thresholds.map((t) => (
                     <motion.tr
                       key={t.id}
@@ -137,9 +136,7 @@ export default function Thresold({ group, onBack }) {
                         className="w-full min-w-full border rounded px-2 py-1 text-center appearance-none"
                       >
                         {properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
+                          <option key={opt} value={opt}>{opt}</option>
                         ))}
                       </select>
                     </td>
@@ -163,9 +160,7 @@ export default function Thresold({ group, onBack }) {
                         className="w-full min-w-full border rounded px-2 py-1 text-center appearance-none"
                       >
                         {[0, 1].map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
+                          <option key={opt} value={opt}>{opt}</option>
                         ))}
                       </select>
                     </td>

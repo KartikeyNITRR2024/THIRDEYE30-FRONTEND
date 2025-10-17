@@ -1,35 +1,18 @@
-import { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { useContext, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "../../components/NavbarComponents/Navbar";
 import FooterNavbar from "../../components/NavbarComponents/FooterNavbar";
 import backgroundimage from "../../images/backgroundimage.png";
 import MarketThresoldGroups from "../../components/MarketThresoldComponents/MarketThresoldGroups";
 import MarketThresoldGroup from "../../components/MarketThresoldComponents/MarketThresoldGroup";
-import AuthContext from "../../contexts/Auth/AuthContext";
+import MarketThresoldContext from "../../contexts/MarketThresold/MarketThresold/MarketThresoldContext";
 
 export default function MarketThresold() {
-  const [page, setPage] = useState("group");
-  const [selectedGroup, setSelectedGroup] = useState(null);
 
-  const { login } = useContext(AuthContext);
-  const navigate = useNavigate();
+  const { page, selectedGroup, handleGroupClick, handleBackClick } =
+    useContext(MarketThresoldContext);
 
-  useEffect(() => {
-    if (!login) {
-      navigate("/");
-    }
-  }, [login]);
 
-  const handleGroupClick = (group) => {
-    setSelectedGroup(group);
-    setPage("single");
-  };
-
-  const handleBackClick = () => {
-    setPage("group");
-    setSelectedGroup(null);
-  };
 
   const navProperties = {
     showOriginalNavbar: true,

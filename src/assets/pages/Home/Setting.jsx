@@ -1,18 +1,15 @@
 import { useState, useEffect, useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import Navbar from "../../components/NavbarComponents/Navbar";
 import FooterNavbar from "../../components/NavbarComponents/FooterNavbar";
 import backgroundimage from "../../images/backgroundimage.png";
 import UserContext from "../../contexts/User/UserContext";
-import AuthContext from "../../contexts/Auth/AuthContext";
 import NotificationContext from "../../contexts/Notification/NotificationContext";
+import LoadingPage from "../../components/LoadingComponents/LoadingPage";
 
 export default function Setting() {
-  const { userInfo, updateUserDetails, fetchUserInfo } = useContext(UserContext);
-  const { login } = useContext(AuthContext);
+  const { userInfo, updateUserDetails } = useContext(UserContext);
   const { notifyError } = useContext(NotificationContext);
-  const navigate = useNavigate();
 
   const [navProperties] = useState({
     showOriginalNavbar: true,
@@ -27,20 +24,6 @@ export default function Setting() {
     lastName: "",
     phoneNumber: "",
   });
-
-  ///Fetch user info on page load
-  // useEffect(() => {
-  //   const loadUserInfo = async () => {
-  //     await fetchUserInfo();
-  //   };
-  //   loadUserInfo();
-  // }, []);
-
-  useEffect(() => {
-    if (!login) {
-      navigate("/");
-    }
-  }, [login]);
 
   useEffect(() => {
     if (userInfo) {
@@ -77,10 +60,10 @@ export default function Setting() {
     e.preventDefault();
     if (!validateForm()) return;
 
-    await updateUserDetails(formData); // update backend + context + localStorage
+    await updateUserDetails(formData);
   };
 
-  if (!userInfo) return null;
+  if (!userInfo) return <LoadingPage />;
 
   return (
     <div>

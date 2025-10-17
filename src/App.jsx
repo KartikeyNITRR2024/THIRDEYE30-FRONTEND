@@ -1,7 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./assets/pages/Login";
 import SignUp from "./assets/pages/Signup";
-import AlertDemo from "./assets/pages/AlertDemo";
 import Setting from "./assets/pages/Home/Setting";
 import Admin from "./assets/pages/Home/Admin";
 import MarketThresold from "./assets/pages/Home/MarketThresold";
@@ -14,6 +13,7 @@ import ThresoldGroupProvider from "./assets/contexts/MarketThresold/ThresoldGrou
 import ThresoldProvider from "./assets/contexts/MarketThresold/Thresold/ThresoldProvider"
 import ChatIDProvider from "./assets/contexts/MarketThresold/ChatID/ChatIDProvider"
 import StockProvider from "./assets/contexts/Stock/StockProvider";
+import MarketThresoldProvider from "./assets/contexts/MarketThresold/MarketThresold/MarketThresoldProvider"
 // New 404 page
 
 function App() {
@@ -23,7 +23,6 @@ function App() {
       <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
-      <Route path="/alertdemo" element={<AlertDemo />} />
 
       {/* Home / App Pages */}
       <Route path="/setting" element={<Setting />} />
@@ -44,13 +43,15 @@ export default function AppWrapper() {
           <PropertyProvider>
             <StockProvider>
               <UserProvider>
-                <ThresoldProvider>
-                  <ChatIDProvider>
-                    <ThresoldGroupProvider>
-                    <App />
-                    </ThresoldGroupProvider>
-                  </ChatIDProvider>
-                </ThresoldProvider>
+                <MarketThresoldProvider>
+                  <ThresoldProvider>
+                    <ChatIDProvider>
+                      <ThresoldGroupProvider>
+                      <App />
+                      </ThresoldGroupProvider>
+                    </ChatIDProvider>
+                  </ThresoldProvider>
+                </MarketThresoldProvider>
               </UserProvider>
             </StockProvider>
           </PropertyProvider>

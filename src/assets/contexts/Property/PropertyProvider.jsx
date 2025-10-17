@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import PropertyContext from "./PropertyContext";
 import AuthContext from "../Auth/AuthContext";
 import NotificationContext from "../Notification/NotificationContext";
-import Backend from "../../properties/Backend";
+import ApiCaller from "../../properties/Apicaller";
 
 const PropertyProvider = ({ children }) => {
   const { login, userDetails } = useContext(AuthContext);
-  const { notifySuccess, notifyError } = useContext(NotificationContext);
+  const { notifyError } = useContext(NotificationContext);
 
   const [properties, setProperties] = useState({
     MAXIMUM_NO_OF_THRESOLD_PER_GROUP: 0,
@@ -17,42 +17,24 @@ const PropertyProvider = ({ children }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const api = new ApiCaller();
 
-  // ---------------- FETCH WITH RETRY ----------------
-  const fetchWithRetry = async (url, options = {}, retries = 3, delay = 1000) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const res = await fetch(url, options);
-        const data = await res.json();
-        if (res.status >= 500) {
-          if (i === retries - 1) return data;
-          await new Promise((r) => setTimeout(r, delay));
-        } else {
-          return data;
-        }
-      } catch (err) {
-        if (i === retries - 1) return { success: false, errorMessage: err.message, response: null };
-        await new Promise((r) => setTimeout(r, delay));
-      }
-    }
-  };
-
-  // ---------------- FETCH PROPERTIES ----------------
   const fetchProperties = async () => {
     if (!userDetails?.token) return;
     setLoading(true);
 
     try {
-      const data = await fetchWithRetry(`${Backend.THIRDEYEBACKEND.URL}pm/properties/frontend`, {
+      const { data } = await api.call(`pm/properties/frontend`, {
         method: "GET",
         headers: { token: userDetails.token },
       });
 
       if (data.success) {
         const res = data.response;
-
         const bots = res.ALL_ACTIVE_BOTS
-          ? res.ALL_ACTIVE_BOTS.replace(/^\[|\]$/g, "").split(",").map((b) => b.trim())
+          ? res.ALL_ACTIVE_BOTS.replace(/^\[|\]$/g, "")
+              .split(",")
+              .map((b) => b.trim())
           : [];
         const timeGaps = res.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS
           ? res.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.split(",").map((v) => parseInt(v, 10))
@@ -68,16 +50,25 @@ const PropertyProvider = ({ children }) => {
       } else {
         notifyError(data.errorMessage || "Failed to load properties");
       }
-    } catch (err) {
+    } catch {
       notifyError("Network error while fetching properties");
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch properties on mount or when token changes
   useEffect(() => {
-    if (login) fetchProperties();
+    if (login) {
+      fetchProperties();
+    } else {
+      setProperties({
+        MAXIMUM_NO_OF_THRESOLD_PER_GROUP: 0,
+        ALL_ACTIVE_BOTS: [],
+        MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: 0,
+        TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS: [],
+        MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER: 0,
+      });
+    }
   }, [login]);
 
   return (

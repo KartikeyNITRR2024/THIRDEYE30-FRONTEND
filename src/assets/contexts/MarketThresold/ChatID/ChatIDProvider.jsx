@@ -1,44 +1,28 @@
-import React, { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import ChatIDContext from "./ChatIDContext";
 import AuthContext from "../../Auth/AuthContext";
-import Backend from "../../../properties/Backend";
 import NotificationContext from "../../Notification/NotificationContext";
+import ApiCaller from "../../../properties/Apicaller";
+import MarketThresoldContext from "../MarketThresold/MarketThresoldContext";
 
 export default function ChatIDProvider({ children }) {
   const { userDetails } = useContext(AuthContext);
+  const { page } = useContext(MarketThresoldContext);
   const { notifySuccess, notifyError } = useContext(NotificationContext);
-
   const [chatIDs, setChatIDs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const api = new ApiCaller();
 
-  // ---------------- FETCH WITH RETRY ----------------
-  const fetchWithRetry = async (url, options = {}, retries = 3, delay = 1000) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const res = await fetch(url, options);
-        const data = await res.json();
-        if (res.status >= 500) {
-          if (i === retries - 1) return data;
-          await new Promise((r) => setTimeout(r, delay));
-        } else {
-          return data;
-        }
-      } catch (err) {
-        if (i === retries - 1) return { success: false, errorMessage: err.message, response: null };
-        await new Promise((r) => setTimeout(r, delay));
-      }
-    }
-  };
-
-  // ---------------- GET CHAT IDs BY GROUP ----------------
   const fetchChatIDsByGroup = async (groupId) => {
     if (!userDetails?.token || !groupId) return;
     setLoading(true);
+
     try {
-      const data = await fetchWithRetry(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/telegram-chat-ids/group/${groupId}`,
+      const { data } = await api.call(
+        `um/user/telegram-chat-ids/group/${groupId}`,
         { method: "GET", headers: { "Content-Type": "application/json", token: userDetails.token } }
       );
+
       if (data.success) {
         setChatIDs(data.response || []);
       } else {
@@ -51,12 +35,12 @@ export default function ChatIDProvider({ children }) {
     }
   };
 
-  // ---------------- CREATE CHAT ID ----------------
   const createChatID = async (groupId, payload) => {
     if (!userDetails?.token || !groupId) return;
+
     try {
-      const data = await fetchWithRetry(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/telegram-chat-ids/${groupId}`,
+      const { data } = await api.call(
+        `um/user/telegram-chat-ids/${groupId}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", token: userDetails.token },
@@ -66,7 +50,7 @@ export default function ChatIDProvider({ children }) {
 
       if (data.success) {
         notifySuccess("Chat ID created successfully!");
-        await fetchChatIDsByGroup(groupId); // reload chat IDs
+        await fetchChatIDsByGroup(groupId);
         return data.response;
       } else {
         notifyError(data.errorMessage || "Failed to create chat ID");
@@ -78,18 +62,18 @@ export default function ChatIDProvider({ children }) {
     }
   };
 
-  // ---------------- DELETE CHAT ID ----------------
   const deleteChatID = async (chatId, groupId) => {
     if (!userDetails?.token || !groupId) return;
+
     try {
-      const data = await fetchWithRetry(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/telegram-chat-ids/${chatId}`,
+      const { data } = await api.call(
+        `um/user/telegram-chat-ids/${chatId}`,
         { method: "DELETE", headers: { "Content-Type": "application/json", token: userDetails.token } }
       );
 
       if (data.success) {
         notifySuccess("Chat ID deleted successfully!");
-        await fetchChatIDsByGroup(groupId); // reload chat IDs
+        await fetchChatIDsByGroup(groupId);
       } else {
         notifyError(data.errorMessage || "Failed to delete chat ID");
       }
@@ -97,6 +81,12 @@ export default function ChatIDProvider({ children }) {
       notifyError("Network error deleting chat ID");
     }
   };
+
+    useEffect(() => {
+        if (page === "group") {
+          setChatIDs([]);
+        }
+    }, [page]);
 
   return (
     <ChatIDContext.Provider
@@ -112,3 +102,9 @@ export default function ChatIDProvider({ children }) {
     </ChatIDContext.Provider>
   );
 }
+
+// Summary:
+// 1. Manages fetching, creating, and deleting Telegram chat IDs for a group.
+// 2. Uses ApiCaller for API requests with retry and optional timeout.
+// 3. Maintains chatIDs state and loading indicator for child components.
+// 4. Provides notifySuccess and notifyError feedback via NotificationContext.

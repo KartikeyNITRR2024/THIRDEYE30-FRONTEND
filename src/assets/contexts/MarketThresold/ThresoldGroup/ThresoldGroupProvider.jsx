@@ -1,192 +1,139 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import ThresoldGroupContext from "./ThresoldGroupContext";
 import AuthContext from "../../Auth/AuthContext";
-import Backend from "../../../properties/Backend";
 import NotificationContext from "../../Notification/NotificationContext";
+import ApiCaller from "../../../properties/Apicaller";
+import MarketThresoldContext from "../MarketThresold/MarketThresoldContext";
 
 export default function ThresoldGroupProvider({ children }) {
   const { userDetails, login } = useContext(AuthContext);
   const { notifyError, notifySuccess } = useContext(NotificationContext);
-
+  const { page } = useContext(MarketThresoldContext);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
+  const api = new ApiCaller();
 
-  // ---------------- FETCH GROUPS ----------------
-  const fetchThresoldGroups = async (retries = 3, delay = 1000) => {
+  const fetchThresoldGroups = async () => {
     if (!userDetails?.userId || !userDetails?.token) return;
-
     setLoading(true);
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(
-          `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/user/${userDetails.userId}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json", token: userDetails.token },
-          }
-        );
 
-        const data = await response.json();
+    try {
+      const { data } = await api.call(
+        `um/user/threshold-groups/user/${userDetails.userId}`,
+        { method: "GET", headers: { "Content-Type": "application/json", token: userDetails.token } }
+      );
 
-        if (response.status >= 500) {
-          if (i === retries - 1) notifyError("Server error fetching groups");
-          await new Promise((res) => setTimeout(res, delay));
-        } else {
-          if (data.success) {
-            setGroups(data.response || []);
-          } else {
-            notifyError(data.errorMessage || "Failed to load threshold groups");
-          }
-          setLoading(false);
-          return;
-        }
-      } catch (err) {
-        if (i === retries - 1) notifyError("Network error fetching threshold groups");
-        await new Promise((res) => setTimeout(res, delay));
-      }
+      setGroups(data?.success ? data.response || [] : []);
+      if (!data?.success) notifyError(data?.errorMessage || "Failed to load threshold groups");
+    } catch {
+      notifyError("Network error fetching threshold groups");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
-  // ---------------- ADD NEW GROUP ----------------
   const addGroup = async (newGroup) => {
     if (!userDetails?.userId || !userDetails?.token) return;
 
-    const payload = {
-      groupName: newGroup.groupName,
-      active: true,
-      allStocks: false,
-      stockList: "",
-    };
+    const payload = { groupName: newGroup.groupName, active: true, allStocks: false, stockList: "" };
 
     try {
-      const response = await fetch(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/user/${userDetails.userId}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", token: userDetails.token },
-          body: JSON.stringify(payload),
-        }
+      const { data } = await api.call(
+        `um/user/threshold-groups/user/${userDetails.userId}`,
+        { method: "POST", headers: { "Content-Type": "application/json", token: userDetails.token }, body: JSON.stringify(payload) }
       );
 
-      const data = await response.json();
-        
-      if (data.success) {
-
-        setGroups((prev) => [...prev, { ...payload, id: data.response?.id || Date.now() }]);
+      if (data?.success) {
+        setGroups((prev) => [...prev, { ...payload, id: data.response?.id ?? Date.now() }]);
         notifySuccess("Group created successfully!");
       } else {
-        notifyError(data.errorMessage || "Failed to create group");
+        notifyError(data?.errorMessage || "Failed to create group");
       }
-    } catch (err) {
+    } catch {
       notifyError("Network error. Could not create group.");
     }
   };
 
-  // ---------------- FETCH SINGLE GROUP ----------------
   const fetchGroupById = async (groupId) => {
-    if (!userDetails?.userId || !userDetails?.token) return;
+    if (!userDetails?.userId || !userDetails?.token) return null;
 
     try {
-      const response = await fetch(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
-        {
-          method: "GET",
-          headers: { "Content-Type": "application/json", token: userDetails.token },
-        }
+      const { data } = await api.call(
+        `um/user/threshold-groups/${groupId}`,
+        { method: "GET", headers: { "Content-Type": "application/json", token: userDetails.token } }
       );
-      const data = await response.json();
-      if (data.success) return data.response;
-      notifyError(data.errorMessage || "Failed to fetch group details");
+
+      if (data?.success) return data.response;
+      notifyError(data?.errorMessage || "Failed to fetch group details");
       return null;
-    } catch (err) {
+    } catch {
       notifyError("Network error fetching group details.");
       return null;
     }
   };
 
-  // ---------------- UPDATE GROUP STATUS ----------------
   const updateGroupStatus = async (groupId, newActiveStatus, allStocks, stockList) => {
     if (!userDetails?.userId || !userDetails?.token) return;
 
     const currentGroup = groups.find((g) => g.id === groupId);
     if (!currentGroup) return;
 
-
-      console.log(currentGroup);
-
     const payload = {
       groupName: currentGroup.groupName,
-      active: newActiveStatus !== undefined ? newActiveStatus : currentGroup.active,
-      allStocks: allStocks !== undefined ? allStocks : currentGroup.allStocks,
-      stockList: stockList !== undefined ? stockList : currentGroup.stockList || "",
+      active: newActiveStatus ?? currentGroup.active,
+      allStocks: allStocks ?? currentGroup.allStocks,
+      stockList: (stockList ?? currentGroup.stockList) || "",
     };
 
-        console.log(payload);
-
     try {
-      const response = await fetch(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", token: userDetails.token },
-          body: JSON.stringify(payload),
-        }
+      const { data } = await api.call(
+        `um/user/threshold-groups/${groupId}`,
+        { method: "PUT", headers: { "Content-Type": "application/json", token: userDetails.token }, body: JSON.stringify(payload) }
       );
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (data?.success) {
         setGroups((prev) =>
-          prev.map((g) =>
-            g.id === groupId
-              ? {
-                  ...g,
-                  active: newActiveStatus !== undefined ? newActiveStatus : g.active,
-                  allStocks: allStocks !== undefined ? allStocks : g.allStocks,
-                  stockList: stockList !== undefined ? stockList : g.stockList || "",
-                }
-              : g
-          )
+          prev.map((g) => (g.id === groupId ? { ...g, ...payload } : g))
         );
         notifySuccess("Group updated successfully!");
       } else {
-        notifyError(data.errorMessage || "Failed to update group status");
+        notifyError(data?.errorMessage || "Failed to update group status");
       }
-    } catch (err) {
+    } catch {
       notifyError("Network error updating group status.");
     }
   };
 
-  // ---------------- DELETE GROUP ----------------
   const deleteGroup = async (groupId) => {
     if (!userDetails?.userId || !userDetails?.token) return;
 
     try {
-      const response = await fetch(
-        `${Backend.THIRDEYEBACKEND.URL}um/user/threshold-groups/${groupId}`,
-        {
-          method: "DELETE",
-          headers: { "Content-Type": "application/json", token: userDetails.token },
-        }
+      const { data } = await api.call(
+        `um/user/threshold-groups/${groupId}`,
+        { method: "DELETE", headers: { "Content-Type": "application/json", token: userDetails.token } }
       );
 
-      const data = await response.json();
-
-      if (data.success) {
+      if (data?.success) {
         setGroups((prev) => prev.filter((g) => g.id !== groupId));
         notifySuccess("Group deleted successfully!");
       } else {
-        notifyError(data.errorMessage || "Failed to delete group");
+        notifyError(data?.errorMessage || "Failed to delete group");
       }
-    } catch (err) {
+    } catch {
       notifyError("Network error deleting group.");
     }
   };
 
   useEffect(() => {
     if (login) fetchThresoldGroups();
+    else setGroups([]);
   }, [login]);
+
+  useEffect(() => {
+    if (page === "group") {
+      fetchThresoldGroups();
+    }
+  }, [page]);
 
   return (
     <ThresoldGroupContext.Provider
@@ -204,3 +151,11 @@ export default function ThresoldGroupProvider({ children }) {
     </ThresoldGroupContext.Provider>
   );
 }
+
+/*
+Summary:
+1. Fetches, adds, updates, and deletes threshold groups via ApiCaller.
+2. Nullish coalescing ensures proper fallback values without parse errors.
+3. Maintains local state for groups and loading for UI updates.
+4. Notifications are handled through NotificationContext for success/error feedback.
+*/

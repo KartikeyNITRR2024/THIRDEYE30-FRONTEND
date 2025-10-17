@@ -2,6 +2,7 @@ import { RiStockLine } from "react-icons/ri";
 import { MdExposurePlus1 } from "react-icons/md";
 import { useContext, useMemo, useState } from "react";
 import ThresoldGroupContext from "../../contexts/MarketThresold/ThresoldGroup/ThresoldGroupContext";
+import LoadingPage from "../LoadingComponents/LoadingPage";
 
 export default function MarketThresoldGroups({ onGroupClick }) {
   const { groups = [], loading, addGroup } = useContext(ThresoldGroupContext);
@@ -30,9 +31,7 @@ export default function MarketThresoldGroups({ onGroupClick }) {
     }
   };
 
-  if (loading) {
-    return <p className="text-center text-gray-500 mt-4">Loading groups...</p>;
-  }
+  if (loading) return <LoadingPage />;
 
   return (
     <div>
@@ -53,7 +52,6 @@ export default function MarketThresoldGroups({ onGroupClick }) {
           </div>
         ))}
 
-        {/* Add Group Card */}
         <div
           onClick={() => setShowModal(true)}
           className="aspect-square flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-400 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
@@ -63,7 +61,6 @@ export default function MarketThresoldGroups({ onGroupClick }) {
         </div>
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-lg w-80">
@@ -96,3 +93,8 @@ export default function MarketThresoldGroups({ onGroupClick }) {
     </div>
   );
 }
+
+// Summary:
+// Uses LoadingPage component while group data is loading
+// Renders groups grid only after loading is complete
+// Maintains add group modal and creation functionality

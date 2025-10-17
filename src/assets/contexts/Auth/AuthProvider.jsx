@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import AuthContext from "./AuthContext";
-import Backend from "../../properties/Backend";
 import NotificationContext from "../Notification/NotificationContext";
+import ApiCaller from "../../properties/Apicaller";
 
 export default function AuthProvider({ children }) {
   const [userDetails, setUserDetails] = useState({
@@ -15,8 +15,8 @@ export default function AuthProvider({ children }) {
   });
 
   const [login, setLogin] = useState(false);
-
   const { notifySuccess, notifyError } = useContext(NotificationContext);
+  const api = new ApiCaller();
 
   const cleanAllData = () => {
     setUserDetails({
@@ -31,46 +31,15 @@ export default function AuthProvider({ children }) {
     setLogin(false);
   };
 
-  // ------------------- HELPER: fetch with retry -------------------
-  const fetchWithRetry = async (url, options, retries = 3, delay = 1000) => {
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(url, options);
-
-        // Parse JSON even on error
-        const data = await response.json();
-
-        // Retry only on server errors (status >= 500)
-        if (response.status >= 500) {
-          if (i === retries - 1) return data; // last attempt
-          await new Promise((res) => setTimeout(res, delay));
-        } else {
-          // For client errors or success, return immediately
-          return data;
-        }
-      } catch (error) {
-        // Network errors
-        if (i === retries - 1) {
-          return { success: false, errorMessage: error.message, response: null };
-        }
-        await new Promise((res) => setTimeout(res, delay));
-      }
-    }
-  };
-
-  // ------------------- LOGIN -------------------
   const loginFunction = async (credentials) => {
     const payload = { userName: credentials.userName, password: credentials.password };
 
     try {
-      const data = await fetchWithRetry(
-        `${Backend.THIRDEYEBACKEND.URL}um/auth/login`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const { data } = await api.call(`um/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
       if (data.success) {
         const res = data.response;
@@ -99,7 +68,6 @@ export default function AuthProvider({ children }) {
     }
   };
 
-  // ------------------- SIGNUP -------------------
   const signupFunction = async (payload) => {
     if (payload.password !== payload.confirmPassword) {
       notifyError("Passwords do not match!");
@@ -107,14 +75,11 @@ export default function AuthProvider({ children }) {
     }
 
     try {
-      const data = await fetchWithRetry(
-        `${Backend.THIRDEYEBACKEND.URL}um/auth/register`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userName: payload.userName, password: payload.password }),
-        }
-      );
+      const { data } = await api.call(`um/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName: payload.userName, password: payload.password }),
+      });
 
       if (data.success) {
         notifySuccess(`Account created for ${payload.userName}`);
@@ -130,7 +95,6 @@ export default function AuthProvider({ children }) {
     }
   };
 
-  // ------------------- UPDATE USER / LOGOUT -------------------
   const updateUserFunction = (details) => setUserDetails(details);
 
   const logout = () => {
@@ -147,3 +111,7 @@ export default function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+
+// This AuthProvider manages user authentication state and provides login, signup, update, and logout functions.
+// It uses ApiCaller for API requests with retry and optional timeout logic, and NotificationContext for feedback.
+// All children components wrapped inside this provider can access user details and authentication functions via AuthContext.

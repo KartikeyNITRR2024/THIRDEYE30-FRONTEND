@@ -1,4 +1,3 @@
-import React from "react";
 import NotificationContext from "./NotificationContext";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
@@ -6,7 +5,6 @@ import withReactContent from "sweetalert2-react-content";
 export default function NotificationProvider({ children }) {
   const MySwal = withReactContent(Swal);
 
-  // Success alert
   const notifySuccess = (message = "Operation successful!") => {
     MySwal.fire({
       icon: "success",
@@ -16,7 +14,6 @@ export default function NotificationProvider({ children }) {
     });
   };
 
-  // Error alert
   const notifyError = (message = "Something went wrong!") => {
     MySwal.fire({
       icon: "error",
@@ -26,7 +23,6 @@ export default function NotificationProvider({ children }) {
     });
   };
 
-  // Loading alert
   const notifyLoading = (message = "Loading...") => {
     MySwal.fire({
       title: message,
@@ -35,10 +31,9 @@ export default function NotificationProvider({ children }) {
         MySwal.showLoading();
       },
     });
-    return MySwal; // Return instance to close later
+    return MySwal;
   };
 
-  // Confirmation alert
   const notifyConfirm = async (message = "Are you sure?") => {
     const result = await MySwal.fire({
       title: "Confirm",
@@ -53,7 +48,6 @@ export default function NotificationProvider({ children }) {
     return result.isConfirmed;
   };
 
-  // Handle backend response
   const handleResponse = (response) => {
     if (response.success) {
       notifySuccess(response.response?.toString() || "Operation successful!");
@@ -76,3 +70,9 @@ export default function NotificationProvider({ children }) {
     </NotificationContext.Provider>
   );
 }
+
+// Summary:
+// 1. Provides centralized notification functions for the app (success, error, loading, confirm).
+// 2. Uses SweetAlert2 via withReactContent for styled alerts.
+// 3. Includes handleResponse to automatically show success or error messages based on API responses.
+// 4. All child components can access these notifications via NotificationContext.

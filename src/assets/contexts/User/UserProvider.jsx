@@ -1,118 +1,84 @@
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 import UserContext from "./UserContext";
 import AuthContext from "../Auth/AuthContext";
-import Backend from "../../properties/Backend";
 import NotificationContext from "../Notification/NotificationContext";
+import ApiCaller from "../../properties/Apicaller";
+import { useNavigate } from "react-router-dom";
 
 export default function UserProvider({ children }) {
   const { userDetails, login } = useContext(AuthContext);
-  const [userInfo, setUserInfo] = useState(null);
   const { notifySuccess, notifyError } = useContext(NotificationContext);
+  const [userInfo, setUserInfo] = useState(null);
+  const navigate = useNavigate();
+  const api = new ApiCaller();
 
-  // ------------------- FETCH USER INFO -------------------
-  const fetchUserInfo = async (retries = 3, delay = 1000) => {
-    if (!userDetails || !userDetails.token) return;
+  const fetchUserInfo = async () => {
+    if (!userDetails?.token) return;
 
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(
-          `${Backend.THIRDEYEBACKEND.URL}um/user/users/${userDetails.userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              token: userDetails.token,
-            },
-          }
-        );
-        const data = await response.json();
+    try {
+      const { data } = await api.call(`um/user/users/${userDetails.userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          token: userDetails.token,
+        },
+      });
 
-        if (response.status >= 500) {
-          if (i === retries - 1) {
-            notifyError(data.errorMessage || "Server error while fetching user info");
-            return;
-          }
-          await new Promise((res) => setTimeout(res, delay));
-        } else {
-          if (data.success) {
-            const updatedUser = {
-                ...userDetails,            // keep old info like token, userId
-                lastName: data.response.lastName,
-                phoneNumber: data.response.phoneNumber,
-            };
-
-            setUserInfo(updatedUser);             // for form filling
-            localStorage.setItem("userDetails", JSON.stringify(updatedUser));      
-          } else {
-            notifyError(data.errorMessage || "Failed to load user info");
-          }
-          return;
-        }
-      } catch (error) {
-        if (i === retries - 1) {
-          notifyError("Network error. Could not fetch user info.");
-          return;
-        }
-        await new Promise((res) => setTimeout(res, delay));
+      if (data.success) {
+        const updatedUser = {
+          ...userDetails,
+          lastName: data.response.lastName,
+          phoneNumber: data.response.phoneNumber,
+        };
+        setUserInfo(updatedUser);
+        localStorage.setItem("userDetails", JSON.stringify(updatedUser));
+      } else {
+        notifyError(data.errorMessage || "Failed to load user info");
       }
+    } catch {
+      notifyError("Network error. Could not fetch user info.");
     }
   };
 
-  // ------------------- UPDATE USER DETAILS -------------------
-  const updateUserDetails = async (payload, retries = 3, delay = 1000) => {
-    if (!userInfo || !userInfo.userId) {
+  const updateUserDetails = async (payload) => {
+    if (!userInfo?.userId) {
       notifyError("User not found!");
       return;
     }
 
-    for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(
-          `${Backend.THIRDEYEBACKEND.URL}um/user/users/${userInfo.userId}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              token: userInfo.token,
-            },
-            body: JSON.stringify(payload),
-          }
-        );
+    try {
+      const { data } = await api.call(`um/user/users/${userInfo.userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          token: userInfo.token,
+        },
+        body: JSON.stringify(payload),
+      });
 
-        const data = await response.json();
-
-        if (response.status >= 500) {
-          if (i === retries - 1) {
-            notifyError(data.errorMessage || "Server error while updating user info");
-            return;
-          }
-          await new Promise((res) => setTimeout(res, delay));
-        } else {
-          if (data.success) {
-            const updatedUser = { ...userInfo, ...payload };
-            setUserInfo(updatedUser);
-            localStorage.setItem("userDetails", JSON.stringify(updatedUser));
-            notifySuccess("User details updated successfully!");
-          } else {
-            notifyError(data.errorMessage || "Update failed!");
-          }
-          return;
-        }
-      } catch (error) {
-        if (i === retries - 1) {
-          notifyError("Network error. Could not update user info.");
-          return;
-        }
-        await new Promise((res) => setTimeout(res, delay));
+      if (data.success) {
+        const updatedUser = { ...userInfo, ...payload };
+        setUserInfo(updatedUser);
+        localStorage.setItem("userDetails", JSON.stringify(updatedUser));
+        notifySuccess("User details updated successfully!");
+      } else {
+        notifyError(data.errorMessage || "Update failed!");
       }
+    } catch {
+      notifyError("Network error. Could not update user info.");
     }
   };
 
-  // // ------------------- LOAD FROM AUTH OR LOCALSTORAGE -------------------
   useEffect(() => {
-    if (login) {
-      fetchUserInfo();
-    } 
+    if (login)
+    {
+       fetchUserInfo();
+    }
+    else
+    {
+        setUserInfo(null);
+        navigate("/");
+    }
   }, [login]);
 
   return (
@@ -121,3 +87,7 @@ export default function UserProvider({ children }) {
     </UserContext.Provider>
   );
 }
+
+// This UserProvider manages fetching and updating user information.
+// It uses ApiCaller for API requests with retries and optional timeout.
+// Provides userInfo state and functions (fetchUserInfo, updateUserDetails) to child components.
