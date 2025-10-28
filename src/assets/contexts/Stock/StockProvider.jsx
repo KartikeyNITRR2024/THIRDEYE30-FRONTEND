@@ -30,8 +30,6 @@ export default function StockProvider({ children }) {
           uniqueId: s.uniqueId.toString().padStart(5, "0"),
           name: s.uniqueCode,
           marketCode: s.marketCode,
-          lastNightClosingPrice: s.lastNightClosingPrice,
-          todaysOpeningPrice: s.todaysOpeningPrice,
           currentTime: s.currentTime,
         }));
         setStocks(formattedStocks);

@@ -143,7 +143,7 @@ export default function Stock({ group, onBack }) {
             <tbody>
               {filteredStocks.map((stock) => (
                 <tr key={stock.id}>
-                  <td className="border px-2 py-2 text-left">{stock.name}</td>
+                  <td className="border px-2 py-2 text-left">{stock.name+" "+stock.marketCode}</td>
                   <td className="border px-2 py-2">
                     <input
                       type="checkbox"

@@ -5,16 +5,21 @@ import Setting from "./assets/pages/Home/Setting";
 import Admin from "./assets/pages/Home/Admin";
 import MarketThresold from "./assets/pages/Home/MarketThresold";
 import NotFound from "./assets/pages/NotFound";
-import NotificationProvider from "./assets/contexts/Notification/NotificationProvider"
-import AuthProvider from "./assets/contexts/Auth/AuthProvider" 
-import UserProvider from "./assets/contexts/User/UserProvider"
-import PropertyProvider from "./assets/contexts/Property/PropertyProvider"
-import ThresoldGroupProvider from "./assets/contexts/MarketThresold/ThresoldGroup/ThresoldGroupProvider"
-import ThresoldProvider from "./assets/contexts/MarketThresold/Thresold/ThresoldProvider"
-import ChatIDProvider from "./assets/contexts/MarketThresold/ChatID/ChatIDProvider"
+import NotificationProvider from "./assets/contexts/Notification/NotificationProvider";
+import AuthProvider from "./assets/contexts/Auth/AuthProvider";
+import UserProvider from "./assets/contexts/User/UserProvider";
+import PropertyProvider from "./assets/contexts/Property/PropertyProvider";
+import ThresoldGroupProvider from "./assets/contexts/MarketThresold/ThresoldGroup/ThresoldGroupProvider";
+import ThresoldProvider from "./assets/contexts/MarketThresold/Thresold/ThresoldProvider";
+import ChatIDProvider from "./assets/contexts/MarketThresold/ChatID/ChatIDProvider";
 import StockProvider from "./assets/contexts/Stock/StockProvider";
-import MarketThresoldProvider from "./assets/contexts/MarketThresold/MarketThresold/MarketThresoldProvider"
-// New 404 page
+import MarketThresoldProvider from "./assets/contexts/MarketThresold/MarketThresold/MarketThresoldProvider";
+import PageProvider from "./assets/contexts/Admin/Page/PageProvider";
+import ConfigurationProvider from "./assets/contexts/Admin/Configuration/ConfigurationProvider";
+import MicroservicesProvider from "./assets/contexts/Admin/Microservices/MicroservicesProvider";
+import UsersProvider from "./assets/contexts/Admin/Users/UsersProvider";
+import StocksProvider from "./assets/contexts/Admin/Stocks/StocksProvider";
+
 
 function App() {
   return (
@@ -40,21 +45,31 @@ export default function AppWrapper() {
     <BrowserRouter>
       <NotificationProvider>
         <AuthProvider>
-          <PropertyProvider>
-            <StockProvider>
-              <UserProvider>
-                <MarketThresoldProvider>
-                  <ThresoldProvider>
-                    <ChatIDProvider>
-                      <ThresoldGroupProvider>
-                      <App />
-                      </ThresoldGroupProvider>
-                    </ChatIDProvider>
-                  </ThresoldProvider>
-                </MarketThresoldProvider>
-              </UserProvider>
-            </StockProvider>
-          </PropertyProvider>
+          <PageProvider>
+            <PropertyProvider>
+              <StockProvider>
+                <UserProvider>
+                  <MarketThresoldProvider>
+                    <ThresoldProvider>
+                      <ChatIDProvider>
+                        <ThresoldGroupProvider>
+                          <ConfigurationProvider>
+                            <MicroservicesProvider>
+                              <UsersProvider>
+                                <StocksProvider>
+                                  <App />
+                                </StocksProvider>
+                              </UsersProvider>
+                            </MicroservicesProvider>
+                          </ConfigurationProvider>
+                        </ThresoldGroupProvider>
+                      </ChatIDProvider>
+                    </ThresoldProvider>
+                  </MarketThresoldProvider>
+                </UserProvider>
+              </StockProvider>
+            </PropertyProvider>
+          </PageProvider>
         </AuthProvider>
       </NotificationProvider>
     </BrowserRouter>

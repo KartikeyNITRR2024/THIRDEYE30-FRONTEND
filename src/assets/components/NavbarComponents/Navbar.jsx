@@ -5,18 +5,25 @@ import { MdLogout } from "react-icons/md";
 import { FaArrowLeft } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../../contexts/Auth/AuthContext";
+import PageContext from "../../contexts/Admin/Page/PageContext";
 import MarketThresoldContext from "../../contexts/MarketThresold/MarketThresold/MarketThresoldContext";
 
 export default function Navbar(props) {
   const navigate = useNavigate();
   const [options, setOptions] = useState(false);
   const { handleBackClick } = useContext(MarketThresoldContext);
+  const { resetPage } = useContext(PageContext);
 
   const { navProperties } = props;
   const { logout, userDetails } = useContext(AuthContext);
 
   const navigateFunc = (path) => {
     navigate(path);
+  };
+
+  const handleAdminClick = () => {
+    resetPage();
+    navigate("/admin");
   };
 
   const handleMarketThresoldClick = () => {
@@ -52,7 +59,7 @@ export default function Navbar(props) {
                 </li>
                 {isAdmin && (
                   <li
-                    onClick={() => navigateFunc("/admin")}
+                    onClick={handleAdminClick}
                     className="cursor-pointer text-black hover:text-gray-800"
                   >
                     Admin
