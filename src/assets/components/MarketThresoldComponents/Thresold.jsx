@@ -7,7 +7,8 @@ import LoadingPage from "../LoadingComponents/LoadingPage";
 
 export default function Thresold({ group, onBack }) {
   const { properties } = useContext(PropertyContext);
-  const { thresholds, loading, fetchThresholds, addThreshold, deleteThreshold } = useContext(ThresoldContext);
+  const { thresholds, loading, fetchThresholds, addThreshold, deleteThreshold } =
+    useContext(ThresoldContext);
 
   const [newThreshold, setNewThreshold] = useState({
     gapSeconds: properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS[0] || 10,
@@ -39,6 +40,9 @@ export default function Thresold({ group, onBack }) {
     deleteThreshold(thresholdId, group.id);
   };
 
+  const reachedMax =
+    thresholds.length >= properties.MAXIMUM_NO_OF_THRESOLD_PER_GROUP;
+
   return (
     <AnimatePresence mode="wait">
       <motion.div
@@ -51,13 +55,21 @@ export default function Thresold({ group, onBack }) {
       >
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
+          {/* Back Button */}
           <button
             onClick={onBack}
             className="flex items-center gap-1 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition text-sm md:text-base"
           >
             <MdArrowBack size={20} /> Back
           </button>
-          <div className="w-10"></div>
+
+
+
+          <div className="text-sm md:text-base text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">
+            <span className="font-semibold">
+              {thresholds.length} / {properties.MAXIMUM_NO_OF_THRESOLD_PER_GROUP} created
+            </span>
+          </div>
         </div>
 
         {/* Loading or Table */}
@@ -89,7 +101,7 @@ export default function Thresold({ group, onBack }) {
                           type="number"
                           value={t.timeGapInSeconds}
                           readOnly
-                          className="w-full min-w-full text-center border rounded px-2 py-1 bg-gray-100"
+                          className="w-full text-center border rounded px-2 py-1 bg-gray-100"
                         />
                       </td>
                       <td className="border px-2 py-2">
@@ -97,15 +109,15 @@ export default function Thresold({ group, onBack }) {
                           type="number"
                           value={t.priceGap}
                           readOnly
-                          className="w-full min-w-full text-center border rounded px-2 py-1 bg-gray-100"
+                          className="w-full text-center border rounded px-2 py-1 bg-gray-100"
                         />
                       </td>
                       <td className="border px-2 py-2">
                         <input
                           type="text"
-                          value={t.type}
+                          value={t.type == 0 ? "Percent" : "Price"}
                           readOnly
-                          className="w-full min-w-full text-center border rounded px-2 py-1 bg-gray-100"
+                          className="w-full text-center border rounded px-2 py-1 bg-gray-100"
                         />
                       </td>
                       <td className="border px-2 py-2">
@@ -119,60 +131,77 @@ export default function Thresold({ group, onBack }) {
                     </motion.tr>
                   ))}
 
-                  {/* New threshold row */}
-                  <motion.tr
-                    key="new-threshold"
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <td className="border px-2 py-2">
-                      <select
-                        value={newThreshold.gapSeconds}
-                        onChange={(e) =>
-                          setNewThreshold({ ...newThreshold, gapSeconds: e.target.value })
-                        }
-                        className="w-full min-w-full border rounded px-2 py-1 text-center appearance-none"
-                      >
-                        {properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="border px-2 py-2">
-                      <input
-                        type="number"
-                        placeholder="Price Gap"
-                        value={newThreshold.priceGap}
-                        onChange={(e) =>
-                          setNewThreshold({ ...newThreshold, priceGap: e.target.value })
-                        }
-                        className="w-full min-w-full text-center border rounded px-2 py-1"
-                      />
-                    </td>
-                    <td className="border px-2 py-2">
-                      <select
-                        value={newThreshold.type}
-                        onChange={(e) =>
-                          setNewThreshold({ ...newThreshold, type: e.target.value })
-                        }
-                        className="w-full min-w-full border rounded px-2 py-1 text-center appearance-none"
-                      >
-                        {[0, 1].map((opt) => (
-                          <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td className="border px-2 py-2">
-                      <button
-                        onClick={handleAddNew}
-                        className="flex items-center justify-center text-blue-500 transition mx-auto"
-                      >
-                        <MdAdd size={24} />
-                      </button>
-                    </td>
-                  </motion.tr>
+                  {/* Only show "add new" row if below max threshold count */}
+                  {!reachedMax && (
+                    <motion.tr
+                      key="new-threshold"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <td className="border px-2 py-2">
+                        <select
+                          value={newThreshold.gapSeconds}
+                          onChange={(e) =>
+                            setNewThreshold({
+                              ...newThreshold,
+                              gapSeconds: e.target.value,
+                            })
+                          }
+                          className="w-full border rounded px-2 py-1 text-center appearance-none"
+                        >
+                          {properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.map(
+                            (opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </td>
+                      <td className="border px-2 py-2">
+                        <input
+                          type="number"
+                          placeholder="Price Gap"
+                          value={newThreshold.priceGap}
+                          onChange={(e) =>
+                            setNewThreshold({
+                              ...newThreshold,
+                              priceGap: e.target.value,
+                            })
+                          }
+                          className="w-full text-center border rounded px-2 py-1"
+                        />
+                      </td>
+                      <td className="border px-2 py-2">
+                        <select
+                          value={newThreshold.type}
+                          onChange={(e) =>
+                            setNewThreshold({
+                              ...newThreshold,
+                              type: e.target.value,
+                            })
+                          }
+                          className="w-full border rounded px-2 py-1 text-center appearance-none"
+                        >
+                          {[0, 1].map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt == 0 ? "Percent" : "Price"}
+                            </option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="border px-2 py-2">
+                        <button
+                          onClick={handleAddNew}
+                          className="flex items-center justify-center text-blue-500 hover:text-blue-700 transition mx-auto"
+                        >
+                          <MdAdd size={24} />
+                        </button>
+                      </td>
+                    </motion.tr>
+                  )}
                 </AnimatePresence>
               </tbody>
             </table>

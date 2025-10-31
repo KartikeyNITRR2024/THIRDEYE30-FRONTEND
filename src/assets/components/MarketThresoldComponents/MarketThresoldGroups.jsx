@@ -2,10 +2,13 @@ import { RiStockLine } from "react-icons/ri";
 import { MdExposurePlus1 } from "react-icons/md";
 import { useContext, useMemo, useState } from "react";
 import ThresoldGroupContext from "../../contexts/MarketThresold/ThresoldGroup/ThresoldGroupContext";
+import PropertyContext from "../../contexts/Property/PropertyContext";
 import LoadingPage from "../LoadingComponents/LoadingPage";
 
 export default function MarketThresoldGroups({ onGroupClick }) {
   const { groups = [], loading, addGroup } = useContext(ThresoldGroupContext);
+  const { properties } = useContext(PropertyContext);
+
   const [showModal, setShowModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [creating, setCreating] = useState(false);
@@ -31,10 +34,23 @@ export default function MarketThresoldGroups({ onGroupClick }) {
     }
   };
 
+  // ✅ Check if user reached max allowed groups
+  const reachedMax =
+    groups.length >= properties.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER;
+
   if (loading) return <LoadingPage />;
 
   return (
     <div>
+      <div className="flex justify-end items-center mb-4">
+        <div className="text-sm md:text-base text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">
+          <span className="font-semibold">
+                {groups.length} / {properties.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER} groups created
+          </span>
+        </div>
+      </div>
+
+      {/* Groups Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {sortedGroups.map((group) => (
           <div
@@ -45,26 +61,38 @@ export default function MarketThresoldGroups({ onGroupClick }) {
               ${!group.active ? "opacity-60" : ""}`}
           >
             <RiStockLine className="text-4xl text-black mb-2" />
-            <p className={`text-lg font-semibold ${!group.active ? "text-gray-500 italic" : "text-gray-800"}`}>
+            <p
+              className={`text-lg font-semibold ${
+                !group.active ? "text-gray-500 italic" : "text-gray-800"
+              }`}
+            >
               {group.groupName}
             </p>
-            {!group.active && <p className="text-xs text-gray-500 mt-1">(Inactive)</p>}
+            {!group.active && (
+              <p className="text-xs text-gray-500 mt-1">(Inactive)</p>
+            )}
           </div>
         ))}
 
-        <div
-          onClick={() => setShowModal(true)}
-          className="aspect-square flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-400 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
-        >
-          <MdExposurePlus1 className="text-4xl text-black mb-1" />
-          <p className="text-base font-medium text-black">Add Group</p>
-        </div>
+        {/* ✅ Only show Add Group button if user hasn't reached max */}
+        {!reachedMax && (
+          <div
+            onClick={() => setShowModal(true)}
+            className="aspect-square flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-400 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
+          >
+            <MdExposurePlus1 className="text-4xl text-black mb-1" />
+            <p className="text-base font-medium text-black">Add Group</p>
+          </div>
+        )}
       </div>
 
+      {/* Modal for creating new group */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-lg w-80">
-            <h3 className="text-lg font-semibold mb-4 text-black">Create New Group</h3>
+            <h3 className="text-lg font-semibold mb-4 text-black">
+              Create New Group
+            </h3>
             <input
               type="text"
               placeholder="Enter group name"
@@ -81,7 +109,11 @@ export default function MarketThresoldGroups({ onGroupClick }) {
               </button>
               <button
                 onClick={handleAddGroup}
-                className={`px-3 py-1 rounded-lg text-white ${creating ? "bg-gray-400 cursor-not-allowed" : "bg-black hover:bg-gray-900"}`}
+                className={`px-3 py-1 rounded-lg text-white ${
+                  creating
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-black hover:bg-gray-900"
+                }`}
                 disabled={creating}
               >
                 {creating ? "Creating..." : "Create"}
@@ -93,8 +125,3 @@ export default function MarketThresoldGroups({ onGroupClick }) {
     </div>
   );
 }
-
-// Summary:
-// Uses LoadingPage component while group data is loading
-// Renders groups grid only after loading is complete
-// Maintains add group modal and creation functionality
