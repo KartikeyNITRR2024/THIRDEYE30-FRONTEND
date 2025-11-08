@@ -14,7 +14,15 @@ export default function AuthProvider({ children }) {
     firstLogin: null,
   });
 
+  const [verifyUser, setVerifyUser] = useState({
+       message: null,
+       mailId: null,
+       mailType: null
+  });
+
   const [login, setLogin] = useState(false);
+  const [verification, setVerification] = useState(false);
+
   const { notifySuccess, notifyError } = useContext(NotificationContext);
   const api = new ApiCaller();
 
@@ -31,8 +39,20 @@ export default function AuthProvider({ children }) {
     setLogin(false);
   };
 
+  const cleanAllVerificationData = () => {
+    setVerifyUser({
+       message: null,
+       mailId: null,
+       mailType: null
+    });
+    setVerification(false);
+  }
+
   const loginFunction = async (credentials) => {
-    const payload = { userName: credentials.userName, password: credentials.password };
+    const payload = {
+      userName: credentials.userName,
+      password: credentials.password,
+    };
 
     try {
       const { data } = await api.call(`um/auth/login`, {
@@ -43,17 +63,34 @@ export default function AuthProvider({ children }) {
 
       if (data.success) {
         const res = data.response;
-        setLogin(true);
-        setUserDetails({
-          userId: res.userId,
-          token: res.token,
-          userName: res.userName,
-          firstName: res.firstName,
-          lastName: res.lastName,
-          roles: res.roles,
-          firstLogin: res.firstLogin,
-        });
-        notifySuccess(`Welcome, ${res.firstName || res.userName}!`);
+        if (res.loginSuccess) {
+          setLogin(true);
+          setUserDetails({
+            userId: res.userId,
+            token: res.token,
+            userName: res.userName,
+            firstName: res.firstName,
+            lastName: res.lastName,
+            roles: res.roles,
+            firstLogin: res.firstLogin,
+          });
+          notifySuccess(`Welcome, ${res.firstName || res.userName}!`);
+        }
+        else if(res.errorType === 1)
+        {
+          cleanAllData();
+          notifyError(res.message || "Login failed!");
+        }
+        else if(res.errorType === 2)
+        {
+          cleanAllData();
+          setVerifyUser({
+            message: res.message,
+            mailId: res.mailId,
+            mailType: res.mailType
+          });
+          setVerification(true);
+        }
       } else {
         cleanAllData();
         notifyError(data.errorMessage || "Login failed!");
@@ -78,11 +115,21 @@ export default function AuthProvider({ children }) {
       const { data } = await api.call(`um/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName: payload.userName, password: payload.password }),
+        body: JSON.stringify({
+          userName: payload.userName,
+          password: payload.password,
+        }),
       });
 
       if (data.success) {
-        notifySuccess(`Account created for ${payload.userName}`);
+        const res = data.response;
+        cleanAllData();
+          setVerifyUser({
+            message: res.message,
+            mailId: res.id,
+            mailType: res.getMailType
+          });
+        setVerification(true);
       } else {
         notifyError(data.errorMessage || "Sign up failed!");
       }
@@ -103,9 +150,72 @@ export default function AuthProvider({ children }) {
     window.location.href = "/";
   };
 
+  const verifyOtp = async (otpValue, newPassword = null) => {
+    try {
+      const { data } = await api.call(`um/auth/verifyotp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mailId: verifyUser.mailId,
+          mailType: verifyUser.mailType,
+          otp: otpValue,
+          newPassword: newPassword
+        })
+      });
+
+      if (data.success && data.response.success) {
+        notifySuccess(data.response.message);
+        cleanAllVerificationData();
+        return { success: true };
+      } else {
+        notifyError(data.errorMessage);
+        return { success: false };
+      }
+    } catch (err) {
+      notifyError("Something went wrong.");
+      return { success: false };
+    }
+  };
+
+  const resetPassword = async ({ userName, phoneNumber }) => {
+  try {
+    const { data } = await api.call(`um/auth/resetpassword`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName, phoneNumber })
+    });
+
+    if (data.success && data.response.success) {
+      setVerifyUser({
+        message: data.response.message,
+        mailId: data.response.mailId,
+        mailType: data.response.mailType
+      });
+      setVerification(true);
+    } else {
+      notifyError(data.response.message || "Reset request failed.");
+    }
+    return data;
+  } catch (err) {
+    notifyError("Something went wrong.");
+  }
+};
+
   return (
     <AuthContext.Provider
-      value={{ login, userDetails, loginFunction, signupFunction, updateUserFunction, logout }}
+      value={{
+        login,
+        userDetails,
+        loginFunction,
+        signupFunction,
+        updateUserFunction,
+        logout,
+        verification,
+        cleanAllVerificationData,
+        verifyUser,
+        verifyOtp,
+        resetPassword
+      }}
     >
       {children}
     </AuthContext.Provider>

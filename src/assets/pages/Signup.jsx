@@ -20,7 +20,7 @@ export default function SignUp() {
     setLoading(true);
     const response = await signupFunction(formData);
     setLoading(false);
-    if (response.success) navigate("/"); 
+    if (response.success) navigate("/verify"); 
   };
 
   return (
@@ -42,7 +42,7 @@ export default function SignUp() {
           </div>
 
           <form onSubmit={handleSubmit} className="inputcred md:p-20 md:border md:border-gray-600 md:backdrop-blur-sm">
-            <input type="text" placeholder="Username" value={formData.userName} onChange={(e) => handleChange("userName", e.target.value)} className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl" required disabled={loading} />
+            <input type="text" placeholder="Email" value={formData.userName} onChange={(e) => handleChange("userName", e.target.value)} className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl" required disabled={loading} />
             <input type="password" placeholder="Password" value={formData.password} onChange={(e) => handleChange("password", e.target.value)} className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl" required disabled={loading} />
             <input type="password" placeholder="Confirm Password" value={formData.confirmPassword} onChange={(e) => handleChange("confirmPassword", e.target.value)} className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl" required disabled={loading} />
             <button type="submit" className={`m-2 btn h-10 -mx-1 w-full bg-blue-600 rounded-3xl text-white font-semibold hover:bg-blue-700 transition ${loading ? "opacity-50 cursor-not-allowed" : ""}`} disabled={loading}>

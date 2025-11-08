@@ -1,6 +1,8 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Login from "./assets/pages/Login";
 import SignUp from "./assets/pages/Signup";
+import Verify from "./assets/pages/Verify";
+import ForgetPassword from "./assets/pages/ForgetPassword";
 import Setting from "./assets/pages/Home/Setting";
 import Admin from "./assets/pages/Home/Admin";
 import MarketThresold from "./assets/pages/Home/MarketThresold";
@@ -25,9 +27,12 @@ function App() {
   return (
     <Routes>
       {/* Authentication */}
-      <Route path="/" element={<Login />} />
+      <Route index element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/verify" element={<Verify />} />
+      <Route path="/forgetpassword" element={<ForgetPassword />} />
+      
 
       {/* Home / App Pages */}
       <Route path="/setting" element={<Setting />} />

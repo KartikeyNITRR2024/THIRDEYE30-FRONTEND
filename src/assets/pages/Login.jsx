@@ -8,7 +8,7 @@ import NotificationContext from "../contexts/Notification/NotificationContext";
 import { FaLinkedin, FaGithub, FaEnvelope } from "react-icons/fa";
 
 export default function Login() {
-  const { login, userDetails, loginFunction } = useContext(AuthContext);
+  const { login, userDetails, loginFunction, verification } = useContext(AuthContext);
   const { notifyError } = useContext(NotificationContext);
   const navigate = useNavigate();
 
@@ -16,11 +16,15 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (verification)
+    {
+      navigate("/verify", { replace: true });
+    }
     if (login && userDetails) {
       const path = userDetails.firstLogin ? "/setting" : "/marketthresold";
       navigate(path, { replace: true });
     }
-  }, [login, userDetails, navigate]);
+  }, [login, userDetails, navigate, verification]);
 
 
   const handleChange = (field, value) =>
@@ -87,7 +91,7 @@ export default function Login() {
             <input
               className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl focus:border-gray-700 hover:border-gray-700"
               type="text"
-              placeholder="Username"
+              placeholder="Email"
               value={formData.userName}
               onChange={(e) => handleChange("userName", e.target.value)}
               required
@@ -113,6 +117,15 @@ export default function Login() {
             >
               {loading ? "Logging in..." : "Log In"}
             </button>
+
+            <p className="text-center text-gray-300 mt-4 text-sm">
+              <Link
+                to="/forgetpassword"
+                className="text-blue-400 hover:underline font-semibold"
+              >
+                Forget Password
+              </Link>
+            </p>
 
             <p className="text-center text-gray-300 mt-4 text-sm">
               Don’t have an account?{" "}
