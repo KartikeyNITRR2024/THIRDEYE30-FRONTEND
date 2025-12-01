@@ -6,7 +6,7 @@ import ApiCaller from "../../properties/Apicaller";
 
 export default function StockProvider({ children }) {
   const { userDetails, login } = useContext(AuthContext);
-  const { notifyError } = useContext(NotificationContext);
+  const { notifyError, notifyLoading, closeLoading } = useContext(NotificationContext);
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(false);
   const api = new ApiCaller();
@@ -14,7 +14,7 @@ export default function StockProvider({ children }) {
   const fetchStocks = async () => {
     if (!userDetails?.token) return;
     setLoading(true);
-
+    notifyLoading();
     try {
       const { data } = await api.call("sm/stocks/all", {
         method: "GET",
@@ -39,7 +39,7 @@ export default function StockProvider({ children }) {
     } catch {
       notifyError("Network error fetching stocks");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 

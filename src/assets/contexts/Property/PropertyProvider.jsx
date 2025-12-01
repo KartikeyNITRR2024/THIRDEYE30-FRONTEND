@@ -6,7 +6,7 @@ import ApiCaller from "../../properties/Apicaller";
 
 const PropertyProvider = ({ children }) => {
   const { login, userDetails } = useContext(AuthContext);
-  const { notifyError } = useContext(NotificationContext);
+  const { notifyError, notifyLoading, closeLoading } = useContext(NotificationContext);
 
   const [properties, setProperties] = useState({
     MAXIMUM_NO_OF_THRESOLD_PER_GROUP: 0,
@@ -21,7 +21,7 @@ const PropertyProvider = ({ children }) => {
 
   const fetchProperties = async () => {
     if (!userDetails?.token) return;
-    setLoading(true);
+    notifyLoading();
 
     try {
       const { data } = await api.call(`pm/properties/frontend`, {
@@ -53,7 +53,7 @@ const PropertyProvider = ({ children }) => {
     } catch {
       notifyError("Network error while fetching properties");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 

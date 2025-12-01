@@ -53,26 +53,25 @@ export default function Thresold({ group, onBack }) {
         transition={{ duration: 0.3 }}
         className="bg-white bg-opacity-95 rounded-xl p-4 shadow-md mt-6 max-w-full mx-auto"
       >
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          {/* Back Button */}
+
+        <div className="flex justify-between items-center mb-6">
           <button
             onClick={onBack}
-            className="flex items-center gap-1 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition text-sm md:text-base"
+            className="flex items-center gap-2 bg-gray-200 text-black px-4 py-2 
+                       rounded-lg shadow-sm hover:bg-gray-300 transition 
+                       font-medium text-sm md:text-base"
           >
-            <MdArrowBack size={20} /> Back
+            <MdArrowBack size={18} />
+            Back
           </button>
 
-
-
-          <div className="text-sm md:text-base text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">
-            <span className="font-semibold">
-              {thresholds.length} / {properties.MAXIMUM_NO_OF_THRESOLD_PER_GROUP} created
-            </span>
+          <div className="bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm 
+                          font-medium text-sm md:text-base flex items-center"
+          >
+            {thresholds.length} / {properties.MAXIMUM_NO_OF_THRESOLD_PER_GROUP} created
           </div>
         </div>
 
-        {/* Loading or Table */}
         {loading ? (
           <LoadingPage />
         ) : (
@@ -86,6 +85,7 @@ export default function Thresold({ group, onBack }) {
                   <th className="border px-2 py-2">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 <AnimatePresence>
                   {thresholds.map((t) => (
@@ -104,6 +104,7 @@ export default function Thresold({ group, onBack }) {
                           className="w-full text-center border rounded px-2 py-1 bg-gray-100"
                         />
                       </td>
+
                       <td className="border px-2 py-2">
                         <input
                           type="number"
@@ -112,6 +113,7 @@ export default function Thresold({ group, onBack }) {
                           className="w-full text-center border rounded px-2 py-1 bg-gray-100"
                         />
                       </td>
+
                       <td className="border px-2 py-2">
                         <input
                           type="text"
@@ -120,10 +122,11 @@ export default function Thresold({ group, onBack }) {
                           className="w-full text-center border rounded px-2 py-1 bg-gray-100"
                         />
                       </td>
+
                       <td className="border px-2 py-2">
                         <button
                           onClick={() => handleDelete(t.id)}
-                          className="text-red-500 hover:text-red-700"
+                          className="text-black hover:text-gray-700"
                         >
                           <MdDelete size={20} />
                         </button>
@@ -131,7 +134,6 @@ export default function Thresold({ group, onBack }) {
                     </motion.tr>
                   ))}
 
-                  {/* Only show "add new" row if below max threshold count */}
                   {!reachedMax && (
                     <motion.tr
                       key="new-threshold"
@@ -144,44 +146,35 @@ export default function Thresold({ group, onBack }) {
                         <select
                           value={newThreshold.gapSeconds}
                           onChange={(e) =>
-                            setNewThreshold({
-                              ...newThreshold,
-                              gapSeconds: e.target.value,
-                            })
+                            setNewThreshold({ ...newThreshold, gapSeconds: e.target.value })
                           }
                           className="w-full border rounded px-2 py-1 text-center appearance-none"
                         >
-                          {properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.map(
-                            (opt) => (
-                              <option key={opt} value={opt}>
-                                {opt}
-                              </option>
-                            )
-                          )}
+                          {properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.map((opt) => (
+                            <option key={opt} value={opt}>
+                              {opt}
+                            </option>
+                          ))}
                         </select>
                       </td>
+
                       <td className="border px-2 py-2">
                         <input
                           type="number"
                           placeholder="Price Gap"
                           value={newThreshold.priceGap}
                           onChange={(e) =>
-                            setNewThreshold({
-                              ...newThreshold,
-                              priceGap: e.target.value,
-                            })
+                            setNewThreshold({ ...newThreshold, priceGap: e.target.value })
                           }
                           className="w-full text-center border rounded px-2 py-1"
                         />
                       </td>
+
                       <td className="border px-2 py-2">
                         <select
                           value={newThreshold.type}
                           onChange={(e) =>
-                            setNewThreshold({
-                              ...newThreshold,
-                              type: e.target.value,
-                            })
+                            setNewThreshold({ ...newThreshold, type: e.target.value })
                           }
                           className="w-full border rounded px-2 py-1 text-center appearance-none"
                         >
@@ -192,10 +185,11 @@ export default function Thresold({ group, onBack }) {
                           ))}
                         </select>
                       </td>
+
                       <td className="border px-2 py-2">
                         <button
                           onClick={handleAddNew}
-                          className="flex items-center justify-center text-blue-500 hover:text-blue-700 transition mx-auto"
+                          className="flex items-center justify-center text-black hover:text-gray-700 transition mx-auto"
                         >
                           <MdAdd size={24} />
                         </button>

@@ -16,16 +16,12 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (verification)
-    {
-      navigate("/verify", { replace: true });
-    }
+    if (verification) navigate("/verify", { replace: true });
     if (login && userDetails) {
       const path = userDetails.firstLogin ? "/setting" : "/marketthresold";
       navigate(path, { replace: true });
     }
   }, [login, userDetails, navigate, verification]);
-
 
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -49,10 +45,7 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await loginFunction(formData);
-      if (!response.success) {
-        notifyError(response.errorMessage || "Invalid credentials");
-      }
-      // ⚙️ Redirect handled automatically by useEffect
+      if (!response.success) notifyError(response.errorMessage || "Invalid credentials");
     } catch {
       notifyError("Something went wrong during login.");
     } finally {
@@ -63,7 +56,10 @@ export default function Login() {
   return (
     <div
       className="flex items-center justify-center min-h-screen relative bg-cover bg-center"
-      style={{ backgroundImage: `url(${backgroundimage})` }}
+      style={{
+        backgroundImage: `url(${backgroundimage})`,
+        filter: "grayscale(100%)",
+      }}
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -72,26 +68,28 @@ export default function Login() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 40 }}
           transition={{ duration: 0.4 }}
-          className="text-white p-10 rounded flex flex-col md:flex-row"
+          className="flex flex-col md:flex-row p-10 rounded"
         >
-          {/* Left Logo Section */}
+          {/* Left Logo */}
           <div className="mb-16 md:mb-0 flex items-center justify-center">
             <img
               className="md:w-2/3 md:h-auto"
               src={thirdeyelogo}
               alt="ThirdEye Logo"
+              style={{ filter: "grayscale(100%)" }}
             />
           </div>
 
           {/* Login Form */}
           <form
             onSubmit={handleSubmit}
-            className="inputcred md:p-20 md:border md:border-gray-600 md:backdrop-blur-sm"
+            className="md:p-20 md:border md:border-gray-400 md:backdrop-blur-sm"
           >
             <input
-              className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl focus:border-gray-700 hover:border-gray-700"
+              className="m-2 text-black -mx-1 p-3 w-full border border-black rounded-xl
+                         bg-white placeholder-gray-500 focus:border-black hover:border-black"
               type="text"
-              placeholder="Email"
+              placeholder="Enter email / username"
               value={formData.userName}
               onChange={(e) => handleChange("userName", e.target.value)}
               required
@@ -99,9 +97,10 @@ export default function Login() {
             />
 
             <input
-              className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl focus:border-gray-700 hover:border-gray-700"
+              className="m-2 text-black -mx-1 p-3 w-full border border-black rounded-xl
+                         bg-white placeholder-gray-500 focus:border-black hover:border-black"
               type="password"
-              placeholder="Password"
+              placeholder="Enter password"
               value={formData.password}
               onChange={(e) => handleChange("password", e.target.value)}
               required
@@ -110,29 +109,24 @@ export default function Login() {
 
             <button
               type="submit"
-              className={`m-2 btn h-10 -mx-1 w-full bg-blue-600 rounded-3xl text-white font-semibold hover:bg-blue-700 transition ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className={`m-2 h-10 -mx-1 w-full bg-black text-white rounded-3xl font-semibold 
+                         hover:bg-gray-900 transition ${
+                           loading ? "opacity-50 cursor-not-allowed" : ""
+                         }`}
               disabled={loading}
             >
               {loading ? "Logging in..." : "Log In"}
             </button>
 
-            <p className="text-center text-gray-300 mt-4 text-sm">
-              <Link
-                to="/forgetpassword"
-                className="text-blue-400 hover:underline font-semibold"
-              >
+            <p className="text-center text-black mt-4 text-sm">
+              <Link to="/forgetpassword" className="text-black hover:underline font-semibold">
                 Forget Password
               </Link>
             </p>
 
-            <p className="text-center text-gray-300 mt-4 text-sm">
+            <p className="text-center text-black mt-4 text-sm">
               Don’t have an account?{" "}
-              <Link
-                to="/signup"
-                className="text-blue-400 hover:underline font-semibold"
-              >
+              <Link to="/signup" className="text-black hover:underline font-semibold">
                 Create one
               </Link>
             </p>
@@ -140,31 +134,34 @@ export default function Login() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Footer Section */}
+      {/* Footer */}
       <span className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center flex flex-col items-center space-y-1">
         <p className="font-semibold text-black">Kartikey Thawait</p>
+
         <div className="flex space-x-4">
           <a
             href="mailto:kartikeythawait123@gmail.com"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-700 hover:text-gray-900"
+            className="text-black hover:text-gray-700"
           >
             <FaEnvelope size={18} />
           </a>
+
           <a
             href="https://www.linkedin.com/in/kartikey-thawait-51583a221/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-700 hover:text-blue-700"
+            className="text-black hover:text-gray-700"
           >
             <FaLinkedin size={18} />
           </a>
+
           <a
             href="https://github.com/KartikeyNITRR2024"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-gray-700 hover:text-gray-900"
+            className="text-black hover:text-gray-700"
           >
             <FaGithub size={18} />
           </a>

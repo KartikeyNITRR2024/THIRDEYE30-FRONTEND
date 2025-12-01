@@ -7,14 +7,14 @@ import { useNavigate } from "react-router-dom";
 
 export default function UserProvider({ children }) {
   const { userDetails, login } = useContext(AuthContext);
-  const { notifySuccess, notifyError } = useContext(NotificationContext);
+  const { notifySuccess, notifyError, notifyLoading, closeLoading, notifyConfirm } = useContext(NotificationContext);
   const [userInfo, setUserInfo] = useState(null);
   const navigate = useNavigate();
   const api = new ApiCaller();
 
   const fetchUserInfo = async () => {
     if (!userDetails?.token) return;
-
+    notifyLoading();
     try {
       const { data } = await api.call(`um/user/users/${userDetails.userId}`, {
         method: "GET",
@@ -37,6 +37,8 @@ export default function UserProvider({ children }) {
       }
     } catch {
       notifyError("Network error. Could not fetch user info.");
+    } finally {
+      closeLoading();
     }
   };
 
@@ -45,6 +47,9 @@ export default function UserProvider({ children }) {
       notifyError("User not found!");
       return;
     }
+    const ok = await notifyConfirm("Update user details?");
+    if (!ok) return;
+    notifyLoading("Updating user details");
 
     try {
       const { data } = await api.call(`um/user/users/${userInfo.userId}`, {
@@ -66,6 +71,8 @@ export default function UserProvider({ children }) {
       }
     } catch {
       notifyError("Network error. Could not update user info.");
+    } finally {
+      closeLoading();
     }
   };
 

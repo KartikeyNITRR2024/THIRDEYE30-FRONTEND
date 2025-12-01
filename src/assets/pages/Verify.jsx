@@ -8,7 +8,8 @@ import NotificationContext from "../contexts/Notification/NotificationContext";
 import { FaLinkedin, FaGithub, FaEnvelope } from "react-icons/fa";
 
 export default function Verify() {
-  const { verification, cleanAllVerificationData, verifyUser, verifyOtp } = useContext(AuthContext);
+  const { verification, cleanAllVerificationData, verifyUser, verifyOtp } =
+    useContext(AuthContext);
   const { notifyError } = useContext(NotificationContext);
   const navigate = useNavigate();
 
@@ -24,6 +25,7 @@ export default function Verify() {
 
   const handleChange = (value, index) => {
     if (!/^[0-9]?$/.test(value)) return;
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -43,7 +45,6 @@ export default function Verify() {
     e.preventDefault();
     const otpValue = otp.join("");
 
-    // If mailType == 2 (Reset Password) -> Validate passwords
     if (verifyUser?.mailType === 2) {
       if (!newPassword || !confirmPassword) {
         notifyError("Please enter both password fields.");
@@ -60,8 +61,7 @@ export default function Verify() {
 
       const result = await verifyOtp(otpValue, newPassword);
       if (result.success) navigate("/", { replace: true });
-    } 
-    else {
+    } else {
       const result = await verifyOtp(otpValue);
       if (result.success) navigate("/login", { replace: true });
     }
@@ -70,7 +70,10 @@ export default function Verify() {
   return (
     <div
       className="flex items-center justify-center min-h-screen relative bg-cover bg-center"
-      style={{ backgroundImage: `url(${backgroundimage})` }}
+      style={{
+        backgroundImage: `url(${backgroundimage})`,
+        filter: "grayscale(100%)",
+      }}
     >
       <AnimatePresence mode="wait">
         <motion.div
@@ -79,15 +82,22 @@ export default function Verify() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 40 }}
           transition={{ duration: 0.4 }}
-          className="text-white p-10 rounded flex flex-col md:flex-row"
+          className="p-10 rounded flex flex-col md:flex-row"
         >
+          {/* Logo */}
           <div className="mb-16 md:mb-0 flex items-center justify-center">
-            <img className="md:w-2/3 md:h-auto" src={thirdeyelogo} alt="ThirdEye Logo" />
+            <img
+              className="md:w-2/3 md:h-auto"
+              src={thirdeyelogo}
+              alt="ThirdEye Logo"
+              style={{ filter: "grayscale(100%)" }}
+            />
           </div>
 
+          {/* Form */}
           <form
             onSubmit={handleSubmit}
-            className="inputcred md:p-20 md:border md:border-gray-600 md:backdrop-blur-sm flex flex-col items-center"
+            className="md:p-20 md:border md:border-gray-600 md:backdrop-blur-sm flex flex-col items-center"
           >
             {verifyUser?.message && (
               <p className="text-center text-black font-semibold mb-4 px-4">
@@ -95,6 +105,7 @@ export default function Verify() {
               </p>
             )}
 
+            {/* OTP */}
             <div className="flex space-x-3 my-4">
               {otp.map((digit, index) => (
                 <input
@@ -105,45 +116,47 @@ export default function Verify() {
                   value={digit}
                   onChange={(e) => handleChange(e.target.value, index)}
                   onKeyDown={(e) => handleKeyDown(e, index)}
-                  className="w-12 h-12 text-center text-gray-700 text-xl border border-gray-500 rounded-xl focus:border-gray-700 outline-none"
+                  className="w-12 h-12 text-center text-black text-xl border border-black rounded-xl bg-white outline-none"
                 />
               ))}
             </div>
 
-            {/* ✅ Show Password Fields Only When mailType == 2 */}
+            {/* Reset password fields */}
             {verifyUser?.mailType === 2 && (
               <>
                 <input
-                  className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl outline-none"
                   type="password"
                   placeholder="New Password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
+                  className="m-2 text-black bg-white -mx-1 p-3 w-full border border-black rounded-xl outline-none"
                 />
 
                 <input
-                  className="m-2 text-gray-600 -mx-1 p-3 w-full border border-gray-600 rounded-xl outline-none"
                   type="password"
                   placeholder="Confirm Password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="m-2 text-black bg-white -mx-1 p-3 w-full border border-black rounded-xl outline-none"
                 />
               </>
             )}
 
+            {/* Submit Button */}
             <button
               type="submit"
-              className="m-2 btn h-10 -mx-1 w-full bg-blue-600 rounded-3xl text-white font-semibold hover:bg-blue-700 transition"
+              className="m-2 h-10 -mx-1 w-full bg-black text-white rounded-3xl font-semibold hover:bg-gray-900 transition"
             >
               Verify OTP
             </button>
 
-            <p className="text-center text-gray-300 mt-4 text-sm">
+            {/* Back to login */}
+            <p className="text-center text-black mt-4 text-sm">
               Back to Login?{" "}
               <Link
                 to="/"
                 onClick={() => cleanAllVerificationData()}
-                className="text-blue-400 hover:underline font-semibold"
+                className="text-black hover:underline font-semibold"
               >
                 Login
               </Link>
@@ -152,12 +165,20 @@ export default function Verify() {
         </motion.div>
       </AnimatePresence>
 
-      <span className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center flex flex-col items-center space-y-1">
-        <p className="font-semibold text-black">Kartikey Thawait</p>
+      {/* Footer */}
+      <span className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center flex flex-col items-center space-y-1 text-black">
+        <p className="font-semibold">Kartikey Thawait</p>
+
         <div className="flex space-x-4">
-          <a href="mailto:kartikeythawait123@gmail.com"><FaEnvelope size={18} /></a>
-          <a href="https://www.linkedin.com/in/kartikey-thawait-51583a221/"><FaLinkedin size={18} /></a>
-          <a href="https://github.com/KartikeyNITRR2024"><FaGithub size={18} /></a>
+          <a href="mailto:kartikeythawait123@gmail.com" className="hover:text-gray-700">
+            <FaEnvelope size={18} />
+          </a>
+          <a href="https://www.linkedin.com/in/kartikey-thawait-51583a221/" className="hover:text-gray-700">
+            <FaLinkedin size={18} />
+          </a>
+          <a href="https://github.com/KartikeyNITRR2024" className="hover:text-gray-700">
+            <FaGithub size={18} />
+          </a>
         </div>
       </span>
     </div>

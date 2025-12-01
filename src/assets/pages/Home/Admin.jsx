@@ -36,13 +36,13 @@ export default function Admin() {
   const renderPage = () => {
     switch (page) {
       case 1:
-        return <MicroservicesArea />;
+        return <MicroservicesArea onBack={() => updatePage(null)}/>;
       case 2:
-        return <ConfigurtionArea />;
+        return <ConfigurtionArea onBack={() => updatePage(null)} />;
       case 3:
-        return <UserArea />;
+        return <UserArea onBack={() => updatePage(null)} />;
       case 4:
-        return <StocksArea />;
+        return <StocksArea onBack={() => updatePage(null)} />;
       default:
         return (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

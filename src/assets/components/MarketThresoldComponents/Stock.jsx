@@ -7,7 +7,7 @@ import LoadingPage from "../LoadingComponents/LoadingPage";
 
 export default function Stock({ group, onBack }) {
   const { updateGroupStatus, fetchThresoldGroups } = useContext(ThresoldGroupContext);
-  const { stocks, loading } = useContext(StockContext);
+  const { stocks } = useContext(StockContext);
 
   const [selectedStocks, setSelectedStocks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,7 +79,6 @@ export default function Stock({ group, onBack }) {
     setSubmitting(false);
   };
 
-  if (loading) return <LoadingPage />;
 
   return (
     <AnimatePresence mode="wait">
@@ -91,38 +90,39 @@ export default function Stock({ group, onBack }) {
         transition={{ duration: 0.3 }}
         className="bg-white bg-opacity-95 rounded-xl p-4 shadow-md mt-6 max-w-full mx-auto"
       >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-2 mb-4">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-1 px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition text-sm md:text-base"
-            >
-              <MdArrowBack size={20} /> Back
-            </button>
-
-            <button
-              onClick={toggleSelectAll}
-              disabled={submitting}
-              className="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300 transition text-sm md:text-base"
-            >
-              {selectedStocks.length === filteredStocks.length
+      <div className="flex justify-between items-center mb-6">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-2 bg-gray-200 text-black 
+                    px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 
+                    transition font-medium text-sm md:text-base"
+        >
+            <MdArrowBack size={18} />
+            Back
+        </button>
+        <button
+          onClick={toggleSelectAll}
+          disabled={submitting}
+          className="flex items-center gap-2 bg-gray-200 text-black 
+                    px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 
+                    transition font-medium text-sm md:text-base"
+        >
+               {selectedStocks.length === filteredStocks.length
                 ? "Deselect All"
                 : "Select All"}
-            </button>
+        </button>
 
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className={`px-3 py-1 rounded transition text-sm md:text-base ${
-                submitting
-                  ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-blue-500 text-white hover:bg-blue-600"
-              }`}
-            >
+        <button
+          onClick={handleSubmit}
+          disabled={submitting}
+          className="flex items-center gap-2 bg-gray-200 text-black 
+                    px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 
+                    transition font-medium text-sm md:text-base"
+        >
               {submitting ? "Submitting..." : "Submit"}
-            </button>
-          </div>
-
+        </button>
+      </div>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-2 mb-4">
           <input
             type="text"
             placeholder="Search stocks..."
@@ -130,7 +130,7 @@ export default function Stock({ group, onBack }) {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="border rounded px-2 py-1 text-sm w-full md:w-64"
           />
-        </div>
+      </div>
 
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse text-center text-sm md:text-base">
@@ -149,7 +149,7 @@ export default function Stock({ group, onBack }) {
                       type="checkbox"
                       checked={selectedStocks.includes(stock.id)}
                       onChange={() => toggleSelect(stock.id)}
-                      className="w-5 h-5 cursor-pointer"
+                      className="w-5 h-5 cursor-pointer appearance-none border border-black rounded-sm checked:bg-black"
                     />
                   </td>
                 </tr>

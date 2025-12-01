@@ -8,7 +8,7 @@ import PageContext from "../Page/PageContext";
 export default function ConfigurationProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifySuccess } = useContext(NotificationContext);
+  const { notifyError, notifySuccess, notifyLoading, closeLoading, notifyPrompt } = useContext(NotificationContext);
 
   const [configData, setConfigData] = useState({});
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function ConfigurationProvider({ children }) {
 
   const fetchConfig = async () => {
     if (!userDetails?.token) return;
-    setLoading(true);
+    notifyLoading();
     try {
       const { data } = await api.call("pm/properties", {
         method: "GET",
@@ -27,33 +27,52 @@ export default function ConfigurationProvider({ children }) {
     } catch {
       notifyError("Network error while fetching configuration");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 
-  const updateConfig = async (password, updates) => {
-    if (!userDetails?.token || !updates) return;
-    try {
-      const body = { password, updates };
-      const { data } = await api.call("pm/properties/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
-        body: JSON.stringify(body),
-      });
+  const updateConfig = async (updates) => {
+  if (!userDetails?.token || !updates) return;
 
-      if (data.success) {
-        notifySuccess("Configuration updated successfully!");
-        setConfigData({ ...updates });
-        return true;
-      } else {
-        notifyError(data.errorMessage || "Failed to update configuration");
-        return false;
-      }
-    } catch {
-      notifyError("Network error while updating configuration");
+  // 🔥 Ask for password using SweetAlert input
+  const password = await notifyPrompt(
+    "Enter admin password to continue",
+    "Update",
+    "Cancel"
+  );
+
+  if (!password) return false; // user cancelled
+
+  notifyLoading("Updating configurations");
+
+  try {
+    const body = { password, updates };
+
+    const { data } = await api.call("pm/properties/update", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        token: userDetails.token,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (data.success) {
+      notifySuccess("Configuration updated successfully!");
+      setConfigData({ ...updates });
+      return true;
+    } else {
+      notifyError(data.errorMessage || "Failed to update configuration");
       return false;
     }
-  };
+  } catch {
+    notifyError("Network error while updating configuration");
+    return false;
+  } finally {
+    closeLoading();
+  }
+};
+
 
   useEffect(() => {
     if(page === 2)

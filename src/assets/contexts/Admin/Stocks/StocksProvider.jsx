@@ -8,7 +8,7 @@ import PageContext from "../Page/PageContext";
 export default function StocksProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifySuccess } = useContext(NotificationContext);
+  const { notifyError, notifySuccess, notifyLoading, closeLoading } = useContext(NotificationContext);
 
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,7 +18,7 @@ export default function StocksProvider({ children }) {
   // 🔹 Fetch all stocks
   const fetchStocks = async () => {
     if (!userDetails?.token) return;
-    setLoading(true);
+    notifyLoading();
     try {
       const { data } = await api.call("sm/stocks/all", {
         method: "GET",
@@ -35,7 +35,7 @@ export default function StocksProvider({ children }) {
     } catch {
       notifyError("Network error while fetching stock list");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 
@@ -49,7 +49,7 @@ export default function StocksProvider({ children }) {
       notifyError("Please select a CSV file to upload");
       return false;
     }
-
+    notifyLoading("Uploading stocks");
     const formData = new FormData();
     formData.append("file", file);
 
@@ -76,6 +76,7 @@ export default function StocksProvider({ children }) {
       return false;
     } finally {
       setUploading(false);
+      closeLoading();
     }
   };
 

@@ -8,7 +8,7 @@ import PageContext from "../Page/PageContext";
 export default function MicroservicesProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError } = useContext(NotificationContext);
+  const { notifyError, notifyLoading, closeLoading } = useContext(NotificationContext);
 
   const [microservicesStatus, setMicroservicesStatus] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export default function MicroservicesProvider({ children }) {
 
   const fetchMicroserviceStatus = async () => {
     if (!userDetails?.token) return;
-    setLoading(true);
+    notifyLoading();
     try {
       const { data } = await api.call("es/eurekasummary", {
         method: "GET",
@@ -27,7 +27,7 @@ export default function MicroservicesProvider({ children }) {
     } catch {
       notifyError("Network error while fetching microservices status");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 

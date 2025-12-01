@@ -7,7 +7,7 @@ import MarketThresoldContext from "../MarketThresold/MarketThresoldContext";
 
 export default function ThresoldProvider({ children }) {
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifySuccess } = useContext(NotificationContext);
+  const { notifyError, notifySuccess, notifyLoading, closeLoading, notifyConfirm } = useContext(NotificationContext);
   const [thresholds, setThresholds] = useState([]);
   const [loading, setLoading] = useState(false);
   const { page } = useContext(MarketThresoldContext);
@@ -15,7 +15,7 @@ export default function ThresoldProvider({ children }) {
 
   const fetchThresholds = async (groupId) => {
     if (!userDetails?.token || !groupId) return;
-    setLoading(true);
+    notifyLoading();
 
     try {
       const { data } = await api.call(`um/user/thresholds/group/${groupId}`, {
@@ -34,13 +34,13 @@ export default function ThresoldProvider({ children }) {
     } catch {
       notifyError("Network error while fetching thresholds");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 
   const addThreshold = async (groupId, newThreshold) => {
     if (!userDetails?.token || !groupId || !newThreshold) return;
-
+    notifyLoading("Creating Thresold");
     try {
       const { data } = await api.call(`um/user/thresholds/group/${groupId}`, {
         method: "POST",
@@ -59,11 +59,16 @@ export default function ThresoldProvider({ children }) {
       }
     } catch {
       notifyError("Network error while adding threshold");
+    } finally {
+      closeLoading();
     }
   };
 
   const deleteThreshold = async (thresholdId, groupId) => {
     if (!userDetails?.token || !thresholdId) return;
+    const ok = await notifyConfirm("Are you sure you want to delete this thresold?");
+    if (!ok) return;
+    notifyLoading("Deleting Thresold");
 
     try {
       const { data } = await api.call(`um/user/thresholds/${thresholdId}`, {
@@ -82,6 +87,8 @@ export default function ThresoldProvider({ children }) {
       }
     } catch {
       notifyError("Network error while deleting threshold");
+    } finally {
+      closeLoading();
     }
   };
 

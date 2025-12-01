@@ -2,9 +2,10 @@ import { useContext, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import StocksContext from "../../../contexts/Admin/Stocks/StocksContext";
 import LoadingPage from "../../LoadingComponents/LoadingPage";
-import { Search, Upload } from "lucide-react"; // icons
+import { Search, Upload } from "lucide-react";
+import { MdArrowBack } from "react-icons/md"; // icons
 
-export default function StocksArea() {
+export default function StocksArea({ onBack }) {
   const { stocks, loading, fetchStocks, uploadStocksCSV, uploading } =
     useContext(StocksContext);
   const [searchTerm, setSearchTerm] = useState("");
@@ -43,27 +44,21 @@ export default function StocksArea() {
         transition={{ duration: 0.3 }}
         className="bg-white bg-opacity-95 rounded-xl p-4 shadow-md mt-6 max-w-full mx-auto"
       >
-        {/* Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-3">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Stocks Information
-          </h2>
 
-          <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
-            {/* Search bar */}
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-2.5 top-2.5 text-gray-500 h-4 w-4" />
-              <input
-                type="text"
-                placeholder="Search stocks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg pl-8 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-black"
-              />
-            </div>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={onBack}
+            className="flex items-center gap-2 bg-gray-200 text-black 
+                            px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 
+                            transition font-medium text-sm md:text-base"
+          >
+            <MdArrowBack size={18} />
+            Back
+          </button>
 
-            {/* Upload CSV button */}
-            <label className="flex items-center gap-2 bg-black text-white text-sm px-3 py-1.5 rounded-lg cursor-pointer hover:bg-gray-900 transition whitespace-nowrap">
+          <label className="flex items-center gap-2 bg-gray-200 text-black 
+                            px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 
+                            transition font-medium text-sm md:text-base">
               <Upload size={16} />
               {uploading ? "Uploading..." : "Upload CSV"}
               <input
@@ -73,14 +68,24 @@ export default function StocksArea() {
                 className="hidden"
                 disabled={uploading}
               />
-            </label>
+          </label>
 
-            {/* Total count */}
-            <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg whitespace-nowrap">
-              Total:{" "}
-              <span className="text-black">{filteredStocks?.length || 0}</span>
-            </span>
+           <div
+            className="bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm 
+                                  font-medium text-sm md:text-base flex items-center"
+          >
+            Total:{" "} <span className="font-semibold">{filteredStocks?.length || 0}</span>
           </div>
+        </div>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-2 mb-4">
+          <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search stocks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border rounded px-2 py-1 text-sm w-full md:w-64"
+              />
         </div>
 
         {/* Table / Responsive Grid */}

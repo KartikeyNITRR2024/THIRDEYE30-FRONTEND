@@ -7,7 +7,7 @@ import MarketThresoldContext from "../MarketThresold/MarketThresoldContext";
 
 export default function ThresoldGroupProvider({ children }) {
   const { userDetails, login } = useContext(AuthContext);
-  const { notifyError, notifySuccess } = useContext(NotificationContext);
+  const { notifyError, notifySuccess, notifyLoading, closeLoading, notifyConfirm, notifyPrompt } = useContext(NotificationContext);
   const { page } = useContext(MarketThresoldContext);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,7 +15,7 @@ export default function ThresoldGroupProvider({ children }) {
 
   const fetchThresoldGroups = async () => {
     if (!userDetails?.userId || !userDetails?.token) return;
-    setLoading(true);
+    notifyLoading();
 
     try {
       const { data } = await api.call(
@@ -28,35 +28,66 @@ export default function ThresoldGroupProvider({ children }) {
     } catch {
       notifyError("Network error fetching threshold groups");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 
-  const addGroup = async (newGroup) => {
-    if (!userDetails?.userId || !userDetails?.token) return;
+  const addGroup = async () => {
+  if (!userDetails?.userId || !userDetails?.token) return;
 
-    const payload = { groupName: newGroup.groupName, active: true, allStocks: false, stockList: "" };
+  // 🔥 Ask user for group name using SweetAlert prompt
+  const groupName = await notifyPrompt(
+    "Enter group name",
+    "Create",
+    "Cancel"
+  );
 
-    try {
-      const { data } = await api.call(
-        `um/user/threshold-groups/user/${userDetails.userId}`,
-        { method: "POST", headers: { "Content-Type": "application/json", token: userDetails.token }, body: JSON.stringify(payload) }
-      );
+  if (!groupName) return; // user cancelled
 
-      if (data?.success) {
-        setGroups((prev) => [...prev, { ...payload, id: data.response?.id ?? Date.now() }]);
-        notifySuccess("Group created successfully!");
-      } else {
-        notifyError(data?.errorMessage || "Failed to create group");
+  // Build payload
+  const payload = {
+    groupName,
+    active: true,
+    allStocks: false,
+    stockList: "",
+  };
+
+  notifyLoading("Creating Group");
+
+  try {
+    const { data } = await api.call(
+      `um/user/threshold-groups/user/${userDetails.userId}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          token: userDetails.token,
+        },
+        body: JSON.stringify(payload),
       }
-    } catch {
-      notifyError("Network error. Could not create group.");
+    );
+
+    if (data?.success) {
+      setGroups((prev) => [
+        ...prev,
+        { ...payload, id: data.response?.id ?? Date.now() },
+      ]);
+
+      notifySuccess("Group created successfully!");
+    } else {
+      notifyError(data?.errorMessage || "Failed to create group");
     }
-  };
+  } catch {
+    notifyError("Network error. Could not create group.");
+  } finally {
+    closeLoading();
+  }
+};
+
 
   const fetchGroupById = async (groupId) => {
     if (!userDetails?.userId || !userDetails?.token) return null;
-
+    notifyLoading();
     try {
       const { data } = await api.call(
         `um/user/threshold-groups/${groupId}`,
@@ -69,6 +100,8 @@ export default function ThresoldGroupProvider({ children }) {
     } catch {
       notifyError("Network error fetching group details.");
       return null;
+    } finally {
+      closeLoading();
     }
   };
 
@@ -77,7 +110,7 @@ export default function ThresoldGroupProvider({ children }) {
 
     const currentGroup = groups.find((g) => g.id === groupId);
     if (!currentGroup) return;
-
+    notifyLoading("Updating status");
     const payload = {
       groupName: currentGroup.groupName,
       active: newActiveStatus ?? currentGroup.active,
@@ -101,28 +134,36 @@ export default function ThresoldGroupProvider({ children }) {
       }
     } catch {
       notifyError("Network error updating group status.");
+    } finally {
+      closeLoading();
     }
   };
 
   const deleteGroup = async (groupId) => {
-    if (!userDetails?.userId || !userDetails?.token) return;
+  if (!userDetails?.userId || !userDetails?.token) return;
+  const ok = await notifyConfirm("Are you sure you want to delete this group?");
+  if (!ok) return;
 
-    try {
-      const { data } = await api.call(
-        `um/user/threshold-groups/${groupId}`,
-        { method: "DELETE", headers: { "Content-Type": "application/json", token: userDetails.token } }
-      );
+  notifyLoading("Deleting thresold group");
+  try {
+    const { data } = await api.call(
+      `um/user/threshold-groups/${groupId}`,
+      { method: "DELETE", headers: { "Content-Type": "application/json", token: userDetails.token } }
+    );
 
-      if (data?.success) {
-        setGroups((prev) => prev.filter((g) => g.id !== groupId));
-        notifySuccess("Group deleted successfully!");
-      } else {
-        notifyError(data?.errorMessage || "Failed to delete group");
-      }
-    } catch {
-      notifyError("Network error deleting group.");
+    if (data?.success) {
+      setGroups((prev) => prev.filter((g) => g.id !== groupId));
+      notifySuccess("Group deleted successfully!");
+    } else {
+      notifyError(data?.errorMessage || "Failed to delete group");
     }
-  };
+  } catch {
+    notifyError("Network error deleting group.");
+  } finally {
+    closeLoading();
+  }
+};
+
 
   useEffect(() => {
     if (login) fetchThresoldGroups();

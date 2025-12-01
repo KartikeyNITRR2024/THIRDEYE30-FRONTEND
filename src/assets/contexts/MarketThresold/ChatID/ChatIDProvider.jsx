@@ -8,14 +8,14 @@ import MarketThresoldContext from "../MarketThresold/MarketThresoldContext";
 export default function ChatIDProvider({ children }) {
   const { userDetails } = useContext(AuthContext);
   const { page } = useContext(MarketThresoldContext);
-  const { notifySuccess, notifyError } = useContext(NotificationContext);
+  const { notifySuccess, notifyError, notifyLoading, closeLoading, notifyConfirm } = useContext(NotificationContext);
   const [chatIDs, setChatIDs] = useState([]);
   const [loading, setLoading] = useState(false);
   const api = new ApiCaller();
 
   const fetchChatIDsByGroup = async (groupId) => {
     if (!userDetails?.token || !groupId) return;
-    setLoading(true);
+    notifyLoading();
 
     try {
       const { data } = await api.call(
@@ -31,13 +31,13 @@ export default function ChatIDProvider({ children }) {
     } catch {
       notifyError("Network error fetching chat IDs");
     } finally {
-      setLoading(false);
+      closeLoading();
     }
   };
 
   const createChatID = async (groupId, payload) => {
     if (!userDetails?.token || !groupId) return;
-
+    notifyLoading("Creating chat id");
     try {
       const { data } = await api.call(
         `um/user/telegram-chat-ids/${groupId}`,
@@ -59,12 +59,16 @@ export default function ChatIDProvider({ children }) {
     } catch {
       notifyError("Network error creating chat ID");
       return null;
+    } finally {
+      closeLoading();
     }
   };
 
   const deleteChatID = async (chatId, groupId) => {
     if (!userDetails?.token || !groupId) return;
-
+    const ok = await notifyConfirm("Are you sure you want to delete this chatid?");
+    if (!ok) return;
+    notifyLoading("Deleting chat id");
     try {
       const { data } = await api.call(
         `um/user/telegram-chat-ids/${chatId}`,
@@ -79,6 +83,8 @@ export default function ChatIDProvider({ children }) {
       }
     } catch {
       notifyError("Network error deleting chat ID");
+    } finally {
+      closeLoading();
     }
   };
 

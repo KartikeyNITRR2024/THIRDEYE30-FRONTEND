@@ -1,6 +1,6 @@
 import { RiStockLine } from "react-icons/ri";
 import { MdExposurePlus1 } from "react-icons/md";
-import { useContext, useMemo, useState } from "react";
+import { useContext, useMemo } from "react";
 import ThresoldGroupContext from "../../contexts/MarketThresold/ThresoldGroup/ThresoldGroupContext";
 import PropertyContext from "../../contexts/Property/PropertyContext";
 import LoadingPage from "../LoadingComponents/LoadingPage";
@@ -9,32 +9,13 @@ export default function MarketThresoldGroups({ onGroupClick }) {
   const { groups = [], loading, addGroup } = useContext(ThresoldGroupContext);
   const { properties } = useContext(PropertyContext);
 
-  const [showModal, setShowModal] = useState(false);
-  const [newGroupName, setNewGroupName] = useState("");
-  const [creating, setCreating] = useState(false);
-
   const sortedGroups = useMemo(() => {
     const active = groups.filter((g) => g.active);
     const inactive = groups.filter((g) => !g.active);
     return [...active, ...inactive];
   }, [groups]);
 
-  const handleAddGroup = async () => {
-    if (!newGroupName.trim()) return alert("Group name is required.");
-    setCreating(true);
-    try {
-      await addGroup({ groupName: newGroupName });
-      setNewGroupName("");
-      setShowModal(false);
-    } catch (err) {
-      alert("Failed to create group");
-      console.error(err);
-    } finally {
-      setCreating(false);
-    }
-  };
-
-  // ✅ Check if user reached max allowed groups
+  // Check if max group limit reached
   const reachedMax =
     groups.length >= properties.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER;
 
@@ -42,10 +23,12 @@ export default function MarketThresoldGroups({ onGroupClick }) {
 
   return (
     <div>
+      {/* Header showing count */}
       <div className="flex justify-end items-center mb-4">
         <div className="text-sm md:text-base text-gray-700 bg-gray-100 px-3 py-1 rounded-lg">
           <span className="font-semibold">
-                {groups.length} / {properties.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER} groups created
+            {groups.length} /{" "}
+            {properties.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER} groups created
           </span>
         </div>
       </div>
@@ -68,16 +51,17 @@ export default function MarketThresoldGroups({ onGroupClick }) {
             >
               {group.groupName}
             </p>
+
             {!group.active && (
               <p className="text-xs text-gray-500 mt-1">(Inactive)</p>
             )}
           </div>
         ))}
 
-        {/* ✅ Only show Add Group button if user hasn't reached max */}
+        {/* Add Group Card (only if not reached max) */}
         {!reachedMax && (
           <div
-            onClick={() => setShowModal(true)}
+            onClick={addGroup}
             className="aspect-square flex flex-col items-center justify-center bg-white border-2 border-dashed border-gray-400 rounded-2xl cursor-pointer hover:bg-gray-100 transition-all duration-200"
           >
             <MdExposurePlus1 className="text-4xl text-black mb-1" />
@@ -85,43 +69,6 @@ export default function MarketThresoldGroups({ onGroupClick }) {
           </div>
         )}
       </div>
-
-      {/* Modal for creating new group */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-2xl shadow-lg w-80">
-            <h3 className="text-lg font-semibold mb-4 text-black">
-              Create New Group
-            </h3>
-            <input
-              type="text"
-              placeholder="Enter group name"
-              value={newGroupName}
-              onChange={(e) => setNewGroupName(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg p-2 mb-4 focus:outline-none focus:ring-2 focus:ring-black"
-            />
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddGroup}
-                className={`px-3 py-1 rounded-lg text-white ${
-                  creating
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-black hover:bg-gray-900"
-                }`}
-                disabled={creating}
-              >
-                {creating ? "Creating..." : "Create"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

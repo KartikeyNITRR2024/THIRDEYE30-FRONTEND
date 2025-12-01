@@ -15,15 +15,16 @@ export default function AuthProvider({ children }) {
   });
 
   const [verifyUser, setVerifyUser] = useState({
-       message: null,
-       mailId: null,
-       mailType: null
+    message: null,
+    mailId: null,
+    mailType: null,
   });
 
   const [login, setLogin] = useState(false);
   const [verification, setVerification] = useState(false);
 
-  const { notifySuccess, notifyError } = useContext(NotificationContext);
+  const { notifySuccess, notifyError, notifyLoading, closeLoading } =
+    useContext(NotificationContext);
   const api = new ApiCaller();
 
   const cleanAllData = () => {
@@ -41,18 +42,19 @@ export default function AuthProvider({ children }) {
 
   const cleanAllVerificationData = () => {
     setVerifyUser({
-       message: null,
-       mailId: null,
-       mailType: null
+      message: null,
+      mailId: null,
+      mailType: null,
     });
     setVerification(false);
-  }
+  };
 
   const loginFunction = async (credentials) => {
     const payload = {
       userName: credentials.userName,
       password: credentials.password,
     };
+    notifyLoading("Login, Please wait");
 
     try {
       const { data } = await api.call(`um/auth/login`, {
@@ -75,19 +77,15 @@ export default function AuthProvider({ children }) {
             firstLogin: res.firstLogin,
           });
           notifySuccess(`Welcome, ${res.firstName || res.userName}!`);
-        }
-        else if(res.errorType === 1)
-        {
+        } else if (res.errorType === 1) {
           cleanAllData();
           notifyError(res.message || "Login failed!");
-        }
-        else if(res.errorType === 2)
-        {
+        } else if (res.errorType === 2) {
           cleanAllData();
           setVerifyUser({
             message: res.message,
             mailId: res.mailId,
-            mailType: res.mailType
+            mailType: res.mailType,
           });
           setVerification(true);
         }
@@ -95,13 +93,14 @@ export default function AuthProvider({ children }) {
         cleanAllData();
         notifyError(data.errorMessage || "Login failed!");
       }
-
       return data;
     } catch (error) {
       cleanAllData();
       console.error("Login error:", error);
       notifyError("Network error or server not found. Please try again.");
       return { success: false, errorMessage: error.message, response: null };
+    } finally {
+      closeLoading();
     }
   };
 
@@ -110,6 +109,7 @@ export default function AuthProvider({ children }) {
       notifyError("Passwords do not match!");
       return { success: false, errorMessage: "Passwords do not match" };
     }
+    notifyLoading("Signing up. Please wait");
 
     try {
       const { data } = await api.call(`um/auth/register`, {
@@ -124,11 +124,11 @@ export default function AuthProvider({ children }) {
       if (data.success) {
         const res = data.response;
         cleanAllData();
-          setVerifyUser({
-            message: res.message,
-            mailId: res.id,
-            mailType: res.getMailType
-          });
+        setVerifyUser({
+          message: res.message,
+          mailId: res.id,
+          mailType: res.getMailType,
+        });
         setVerification(true);
       } else {
         notifyError(data.errorMessage || "Sign up failed!");
@@ -139,6 +139,8 @@ export default function AuthProvider({ children }) {
       console.error("Sign up error:", error);
       notifyError("Network error or server not found. Please try again.");
       return { success: false, errorMessage: error.message, response: null };
+    } finally {
+      closeLoading();
     }
   };
 
@@ -151,6 +153,7 @@ export default function AuthProvider({ children }) {
   };
 
   const verifyOtp = async (otpValue, newPassword = null) => {
+    notifyLoading("Verifying OTP");
     try {
       const { data } = await api.call(`um/auth/verifyotp`, {
         method: "POST",
@@ -159,8 +162,8 @@ export default function AuthProvider({ children }) {
           mailId: verifyUser.mailId,
           mailType: verifyUser.mailType,
           otp: otpValue,
-          newPassword: newPassword
-        })
+          newPassword: newPassword,
+        }),
       });
 
       if (data.success && data.response.success) {
@@ -174,32 +177,37 @@ export default function AuthProvider({ children }) {
     } catch (err) {
       notifyError("Something went wrong.");
       return { success: false };
+    } finally {
+      closeLoading();
     }
   };
 
   const resetPassword = async ({ userName, phoneNumber }) => {
-  try {
-    const { data } = await api.call(`um/auth/resetpassword`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName, phoneNumber })
-    });
-
-    if (data.success && data.response.success) {
-      setVerifyUser({
-        message: data.response.message,
-        mailId: data.response.mailId,
-        mailType: data.response.mailType
+    notifyLoading("Sending OTP");
+    try {
+      const { data } = await api.call(`um/auth/resetpassword`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName, phoneNumber }),
       });
-      setVerification(true);
-    } else {
-      notifyError(data.response.message || "Reset request failed.");
+
+      if (data.success && data.response.success) {
+        setVerifyUser({
+          message: data.response.message,
+          mailId: data.response.mailId,
+          mailType: data.response.mailType,
+        });
+        setVerification(true);
+      } else {
+        notifyError(data.response.message || "Reset request failed.");
+      }
+      return data;
+    } catch (err) {
+      notifyError("Something went wrong.");
+    } finally {
+      closeLoading();
     }
-    return data;
-  } catch (err) {
-    notifyError("Something went wrong.");
-  }
-};
+  };
 
   return (
     <AuthContext.Provider
@@ -214,7 +222,7 @@ export default function AuthProvider({ children }) {
         cleanAllVerificationData,
         verifyUser,
         verifyOtp,
-        resetPassword
+        resetPassword,
       }}
     >
       {children}
