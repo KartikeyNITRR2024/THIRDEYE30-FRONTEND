@@ -6,8 +6,13 @@ import { Search } from "lucide-react";
 import { MdArrowBack } from "react-icons/md";
 
 export default function ConfigurtionArea({ onBack }) {
-  const { configData, loading, fetchConfig, updateConfig } =
-    useContext(ConfigurationContext);
+  const {
+    configData,
+    loading,
+    fetchConfig,
+    updateConfig,
+    fetchServiceUpdateStatus,
+  } = useContext(ConfigurationContext);
 
   const [editableData, setEditableData] = useState({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,8 +54,14 @@ export default function ConfigurtionArea({ onBack }) {
     const success = await updateConfig(sanitizedData);
 
     if (success) {
-      fetchConfig(); // refresh after update
+      setTimeout(() => {
+        fetchConfig();
+      }, 1000);
     }
+  };
+
+  const handleStatus = async () => {
+    fetchServiceUpdateStatus();
   };
 
   if (loading) return <LoadingPage />;
@@ -79,6 +90,14 @@ export default function ConfigurtionArea({ onBack }) {
           >
             <MdArrowBack size={18} />
             Back
+          </button>
+          <button
+            onClick={handleStatus}
+            className="flex items-center gap-2 bg-gray-200 text-black 
+                                px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 
+                                transition font-medium text-sm md:text-base"
+          >
+            Status
           </button>
           <button
             onClick={handleSubmit}

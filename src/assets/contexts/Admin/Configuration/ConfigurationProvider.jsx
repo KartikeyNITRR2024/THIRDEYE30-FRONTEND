@@ -8,7 +8,7 @@ import PageContext from "../Page/PageContext";
 export default function ConfigurationProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifySuccess, notifyLoading, closeLoading, notifyPrompt } = useContext(NotificationContext);
+  const { notifyError, notifySuccess, notifyLoading, closeLoading, notifyPrompt, notifyInfo } = useContext(NotificationContext);
 
   const [configData, setConfigData] = useState({});
   const [loading, setLoading] = useState(false);
@@ -26,6 +26,33 @@ export default function ConfigurationProvider({ children }) {
       else notifyError(data.errorMessage || "Failed to fetch configuration");
     } catch {
       notifyError("Network error while fetching configuration");
+    } finally {
+      closeLoading();
+    }
+  };
+
+  const fetchServiceUpdateStatus = async () => {
+    if (!userDetails?.token) return;
+    notifyLoading();
+    try {
+      const { data } = await api.call("pm/properties/servicesupdating", {
+        method: "GET",
+        headers: { "Content-Type": "application/json", token: userDetails.token },
+      });
+      if (data.success)
+      {
+         if(data.response)
+         {
+             notifyInfo("Services are updating...");
+         }
+         else
+         {
+             notifyInfo("Services updated");
+         }
+      }
+      else notifyError(data.errorMessage || "Failed to get service update status");
+    } catch {
+      notifyError("Network error while fetching service update");
     } finally {
       closeLoading();
     }
@@ -92,6 +119,7 @@ export default function ConfigurationProvider({ children }) {
         loading,
         fetchConfig,
         updateConfig,
+        fetchServiceUpdateStatus
       }}
     >
       {children}
