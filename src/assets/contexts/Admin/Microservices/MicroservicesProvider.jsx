@@ -11,7 +11,7 @@ export default function MicroservicesProvider({ children }) {
   const { notifyError, notifyLoading, closeLoading } = useContext(NotificationContext);
 
   const [microservicesStatus, setMicroservicesStatus] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [statusCheckerUrls, setStatusCheckerUrls] = useState([]);
   const api = new ApiCaller();
 
   const fetchMicroserviceStatus = async () => {
@@ -31,14 +31,33 @@ export default function MicroservicesProvider({ children }) {
     }
   };
 
+  const fetchStatusCheckerLink = async () => {
+    if (!userDetails?.token) return;
+    notifyLoading();
+    try {
+      const { data } = await api.call("pm/statuschecker/active", {
+        method: "GET",
+        headers: { "Content-Type": "application/json", token: userDetails.token },
+      });
+      if (data.success) setStatusCheckerUrls(data.response || []);
+      else notifyError(data.errorMessage || "Failed to fetch status checker link");
+    } catch {
+      notifyError("Network error while fetching status check link");
+    } finally {
+      closeLoading();
+    }
+  };
+
   useEffect(() => {
     if(page === 1)
     {
         fetchMicroserviceStatus();
+        fetchStatusCheckerLink();
     }
     else
     {
-        setMicroservicesStatus([])
+        setMicroservicesStatus([]);
+        setStatusCheckerUrls([]);
     }
   }, [page]);
 
@@ -46,8 +65,9 @@ export default function MicroservicesProvider({ children }) {
     <MicroservicesContext.Provider
       value={{
         microservicesStatus,
-        loading,
-        fetchMicroserviceStatus
+        statusCheckerUrls,
+        fetchMicroserviceStatus,
+        setStatusCheckerUrls
       }}
     >
       {children}

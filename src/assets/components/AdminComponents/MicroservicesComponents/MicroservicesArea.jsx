@@ -1,13 +1,12 @@
 import { useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import MicroservicesContext from "../../../contexts/Admin/Microservices/MicroservicesContext";
-import LoadingPage from "../../LoadingComponents/LoadingPage";
 import { MdArrowBack } from "react-icons/md";
+import { FaExternalLinkSquareAlt } from "react-icons/fa";
 
 export default function MicroservicesArea({ onBack }) {
-  const { microservicesStatus, loading } = useContext(MicroservicesContext);
-
-  if (loading) return <LoadingPage />;
+  const { microservicesStatus, statusCheckerUrls } =
+    useContext(MicroservicesContext);
 
   const activeServices =
     microservicesStatus?.filter((s) => s.upInstances === s.totalInstances)
@@ -38,8 +37,24 @@ export default function MicroservicesArea({ onBack }) {
             className="bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm 
                                   font-medium text-sm md:text-base flex items-center"
           >
-            Active:{" "}  <span className="font-semibold">{activeServices}</span>
+            Active: <span className="font-semibold">{activeServices}</span>
           </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {statusCheckerUrls?.map((checker) => (
+            <button
+              key={checker.id}
+              onClick={() => window.open(checker.statusCheckerUrl, "_blank")}
+              className="w-full flex items-center justify-between bg-gray-200 text-black 
+                 px-4 py-3 rounded-lg shadow-sm hover:bg-gray-300 transition 
+                 font-medium text-sm md:text-base"
+            >
+              <span>{checker.statusCheckerName}</span>
+
+              <FaExternalLinkSquareAlt size={18} className="text-black" />
+            </button>
+          ))}
         </div>
 
         {/* ============================
