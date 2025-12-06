@@ -47,7 +47,7 @@ export default function UsersProvider({ children }) {
       });
 
       if (data.success) setUsers(data.response || []);
-      else await data.errorMessage || "Failed to load users");
+      else await notifyError(data.errorMessage || "Failed to load users");
     });
   };
 

@@ -40,7 +40,7 @@ export default function MicroservicesProvider({ children }) {
         headers: { "Content-Type": "application/json", token: userDetails.token },
       });
       if (data.success) setStatusCheckerUrls(data.response || []);
-      else await data.errorMessage || "Failed to fetch status checker link");
+      else await notifyError(data.errorMessage || "Failed to fetch status checker link");
     } catch {
       await notifyError("Network error while fetching status check link");
     } finally {
