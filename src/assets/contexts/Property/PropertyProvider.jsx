@@ -48,10 +48,10 @@ const PropertyProvider = ({ children }) => {
           MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER: res.MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER,
         });
       } else {
-        notifyError(data.errorMessage || "Failed to load properties");
+        await notifyError(data.errorMessage || "Failed to load properties");
       }
     } catch {
-      notifyError("Network error while fetching properties");
+      await notifyError("Network error while fetching properties");
     } finally {
       closeLoading();
     }

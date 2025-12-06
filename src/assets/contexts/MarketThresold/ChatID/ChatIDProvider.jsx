@@ -26,10 +26,10 @@ export default function ChatIDProvider({ children }) {
       if (data.success) {
         setChatIDs(data.response || []);
       } else {
-        notifyError(data.errorMessage || "Failed to fetch chat IDs");
+        await notifyError(data.errorMessage || "Failed to fetch chat IDs");
       }
     } catch {
-      notifyError("Network error fetching chat IDs");
+      await notifyError("Network error fetching chat IDs");
     } finally {
       closeLoading();
     }
@@ -49,15 +49,15 @@ export default function ChatIDProvider({ children }) {
       );
 
       if (data.success) {
-        notifySuccess("Chat ID created successfully!");
+        await notifySuccess("Chat ID created successfully!");
         await fetchChatIDsByGroup(groupId);
         return data.response;
       } else {
-        notifyError(data.errorMessage || "Failed to create chat ID");
+        await notifyError(data.errorMessage || "Failed to create chat ID");
         return null;
       }
     } catch {
-      notifyError("Network error creating chat ID");
+      await notifyError("Network error creating chat ID");
       return null;
     } finally {
       closeLoading();
@@ -76,13 +76,13 @@ export default function ChatIDProvider({ children }) {
       );
 
       if (data.success) {
-        notifySuccess("Chat ID deleted successfully!");
+        await notifySuccess("Chat ID deleted successfully!");
         await fetchChatIDsByGroup(groupId);
       } else {
-        notifyError(data.errorMessage || "Failed to delete chat ID");
+        await notifyError(data.errorMessage || "Failed to delete chat ID");
       }
     } catch {
-      notifyError("Network error deleting chat ID");
+      await notifyError("Network error deleting chat ID");
     } finally {
       closeLoading();
     }

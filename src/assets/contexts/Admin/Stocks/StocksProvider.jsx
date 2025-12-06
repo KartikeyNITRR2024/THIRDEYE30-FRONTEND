@@ -30,10 +30,10 @@ export default function StocksProvider({ children }) {
       if (data.success) {
         setStocks(data.response || []);
       } else {
-        notifyError(data.errorMessage || "Failed to fetch stock list");
+        await notifyError(data.errorMessage || "Failed to fetch stock list");
       }
     } catch {
-      notifyError("Network error while fetching stock list");
+      await notifyError("Network error while fetching stock list");
     } finally {
       closeLoading();
     }
@@ -42,11 +42,11 @@ export default function StocksProvider({ children }) {
   // 🔹 Upload stocks CSV
   const uploadStocksCSV = async (file) => {
     if (!userDetails?.token) {
-      notifyError("Unauthorized — please log in again");
+      await notifyError("Unauthorized — please log in again");
       return false;
     }
     if (!file) {
-      notifyError("Please select a CSV file to upload");
+      await notifyError("Please select a CSV file to upload");
       return false;
     }
     notifyLoading("Uploading stocks");
@@ -64,15 +64,15 @@ export default function StocksProvider({ children }) {
       });
 
       if (data?.success) {
-        notifySuccess("Stocks uploaded successfully");
+        await notifySuccess("Stocks uploaded successfully");
         await fetchStocks(); // refresh list
         return true;
       } else {
-        notifyError(data?.errorMessage || "Upload failed");
+        await notifyError(data?.errorMessage || "Upload failed");
         return false;
       }
     } catch {
-      notifyError("Network error during CSV upload");
+      await notifyError("Network error during CSV upload");
       return false;
     } finally {
       setUploading(false);

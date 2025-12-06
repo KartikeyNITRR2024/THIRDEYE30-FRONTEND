@@ -28,7 +28,7 @@ export default function UsersProvider({ children }) {
     try {
       return await fn();
     } catch (error) {
-      notifyError("Network error! Please try again.");
+      await notifyError("Network error! Please try again.");
     } finally {
       closeLoading();
     }
@@ -47,7 +47,7 @@ export default function UsersProvider({ children }) {
       });
 
       if (data.success) setUsers(data.response || []);
-      else notifyError(data.errorMessage || "Failed to load users");
+      else await data.errorMessage || "Failed to load users");
     });
   };
 
@@ -65,9 +65,9 @@ export default function UsersProvider({ children }) {
       });
 
       if (data.success) {
-        notifySuccess(data.response);
+        await notifySuccess(data.response);
         fetchUsers();
-      } else notifyError(data.errorMessage);
+      } else await notifyError(data.errorMessage);
     });
   };
 
@@ -85,9 +85,9 @@ export default function UsersProvider({ children }) {
       });
 
       if (data.success) {
-        notifySuccess(data.response);
+        await notifySuccess(data.response);
         fetchUsers();
-      } else notifyError(data.errorMessage);
+      } else await notifyError(data.errorMessage);
     });
   };
 
@@ -105,9 +105,9 @@ export default function UsersProvider({ children }) {
       });
 
       if (data.success) {
-        notifySuccess(data.response);
+        await notifySuccess(data.response);
         fetchUsers();
-      } else notifyError(data.errorMessage);
+      } else await notifyError(data.errorMessage);
     });
   };
 

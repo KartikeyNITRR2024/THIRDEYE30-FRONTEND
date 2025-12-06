@@ -76,10 +76,10 @@ export default function AuthProvider({ children }) {
             roles: res.roles,
             firstLogin: res.firstLogin,
           });
-          notifySuccess(`Welcome, ${res.firstName || res.userName}!`);
+          await notifySuccess(`Welcome, ${res.firstName || res.userName}!`);
         } else if (res.errorType === 1) {
           cleanAllData();
-          notifyError(res.message || "Login failed!");
+          await notifyError(res.message || "Login failed!");
         } else if (res.errorType === 2) {
           cleanAllData();
           setVerifyUser({
@@ -91,13 +91,13 @@ export default function AuthProvider({ children }) {
         }
       } else {
         cleanAllData();
-        notifyError(data.errorMessage || "Login failed!");
+        await notifyError(data.errorMessage || "Login failed!");
       }
       return data;
     } catch (error) {
       cleanAllData();
       console.error("Login error:", error);
-      notifyError("Network error or server not found. Please try again.");
+      await notifyError("Network error or server not found. Please try again.");
       return { success: false, errorMessage: error.message, response: null };
     } finally {
       closeLoading();
@@ -131,13 +131,13 @@ export default function AuthProvider({ children }) {
         });
         setVerification(true);
       } else {
-        notifyError(data.errorMessage || "Sign up failed!");
+        await notifyError(data.errorMessage || "Sign up failed!");
       }
 
       return data;
     } catch (error) {
       console.error("Sign up error:", error);
-      notifyError("Network error or server not found. Please try again.");
+      await notifyError("Network error or server not found. Please try again.");
       return { success: false, errorMessage: error.message, response: null };
     } finally {
       closeLoading();
@@ -166,16 +166,22 @@ export default function AuthProvider({ children }) {
         }),
       });
 
-      if (data.success && data.response.success) {
-        notifySuccess(data.response.message);
-        cleanAllVerificationData();
-        return { success: true };
-      } else {
-        notifyError(data.errorMessage);
+      if (data.success) {
+         if(data.response.success) {
+            await notifySuccess(data.response.message);
+            cleanAllVerificationData();
+            return { success: true };
+         } else {
+            await notifyError(data.response.message);
+            return { success: false };
+         }
+      }
+      else {
+        await notifyError(data.errorMessage);
         return { success: false };
       }
     } catch (err) {
-      notifyError("Something went wrong.");
+      await notifyError("Something went wrong.");
       return { success: false };
     } finally {
       closeLoading();
@@ -199,11 +205,11 @@ export default function AuthProvider({ children }) {
         });
         setVerification(true);
       } else {
-        notifyError(data.response.message || "Reset request failed.");
+        await notifyError(data.response.message || "Reset request failed.");
       }
       return data;
     } catch (err) {
-      notifyError("Something went wrong.");
+      await notifyError("Something went wrong.");
     } finally {
       closeLoading();
     }

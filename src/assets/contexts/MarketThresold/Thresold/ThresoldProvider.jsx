@@ -29,10 +29,10 @@ export default function ThresoldProvider({ children }) {
       if (data.success) {
         setThresholds(data.response || []);
       } else {
-        notifyError(data.errorMessage || "Failed to load thresholds");
+        await notifyError(data.errorMessage || "Failed to load thresholds");
       }
     } catch {
-      notifyError("Network error while fetching thresholds");
+      await notifyError("Network error while fetching thresholds");
     } finally {
       closeLoading();
     }
@@ -52,13 +52,13 @@ export default function ThresoldProvider({ children }) {
       });
 
       if (data.success) {
-        notifySuccess("Threshold added successfully!");
+        await notifySuccess("Threshold added successfully!");
         fetchThresholds(groupId);
       } else {
-        notifyError(data.errorMessage || "Failed to add threshold");
+        await notifyError(data.errorMessage || "Failed to add threshold");
       }
     } catch {
-      notifyError("Network error while adding threshold");
+      await notifyError("Network error while adding threshold");
     } finally {
       closeLoading();
     }
@@ -80,13 +80,13 @@ export default function ThresoldProvider({ children }) {
       });
 
       if (data.success) {
-        notifySuccess("Threshold deleted successfully!");
+        await notifySuccess("Threshold deleted successfully!");
         if (groupId) fetchThresholds(groupId);
       } else {
-        notifyError(data.errorMessage || "Failed to delete threshold");
+        await notifyError(data.errorMessage || "Failed to delete threshold");
       }
     } catch {
-      notifyError("Network error while deleting threshold");
+      await notifyError("Network error while deleting threshold");
     } finally {
       closeLoading();
     }

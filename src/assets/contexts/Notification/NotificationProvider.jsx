@@ -12,19 +12,19 @@ export default function NotificationProvider({ children }) {
     title: "#000000",       // black title
   };
 
-  // SUCCESS (Black & White theme)
-  const notifySuccess = (message = "Operation successful!") => {
-    MySwal.fire({
+  const notifySuccess = async (message = "Operation successful!") => {
+    const result = await MySwal.fire({
       icon: "success",
       title: "Success",
       text: message,
       confirmButtonColor: BW.confirm,
       color: BW.text,
     });
+    return result;
   };
 
-  const notifyInfo = async (message = "") => {
-  await MySwal.fire({
+const notifyInfo = async (message = "") => {
+  const result = await MySwal.fire({
     title: "Information",
     text: message,
     icon: "info",
@@ -33,28 +33,29 @@ export default function NotificationProvider({ children }) {
     color: BW.text,
     showCancelButton: false,
   });
+  return result;
 };
 
 
   // ERROR (Black & White theme)
-  const notifyError = (message = "Something went wrong!") => {
-    MySwal.fire({
+  const notifyError = async (message = "Something went wrong!") => {
+    const result = await MySwal.fire({
       icon: "error",
       title: "Error",
       text: message,
       confirmButtonColor: BW.confirm,
       color: BW.text,
     });
+    return result;
   };
 
   // LOADING
-  let isLoadingAlert = false;
+  let loadingCount = 0;
 
-  const notifyLoading = (message = "Loading...") => {
-    if (isLoadingAlert) return;
+const notifyLoading = (message = "Loading...") => {
+  loadingCount++;
 
-    isLoadingAlert = true;
-
+  if (loadingCount === 1) {
     MySwal.fire({
       title: message,
       allowOutsideClick: false,
@@ -62,15 +63,17 @@ export default function NotificationProvider({ children }) {
       didOpen: () => MySwal.showLoading(),
       color: BW.text,
     });
-  };
+  }
+};
 
-  const closeLoading = () => {
-    const popup = Swal.getPopup();
-    if (isLoadingAlert && popup && Swal.isLoading()) {
-      MySwal.close();
-    }
-    isLoadingAlert = false;
-  };
+const closeLoading = () => {
+  loadingCount--;
+
+  if (loadingCount <= 0) {
+    loadingCount = 0;
+    MySwal.close();
+  }
+};
 
   // CONFIRM (Black & White buttons)
   const notifyConfirm = async (message = "Are you sure?") => {

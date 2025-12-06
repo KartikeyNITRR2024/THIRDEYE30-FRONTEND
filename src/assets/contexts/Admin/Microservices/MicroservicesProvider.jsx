@@ -23,9 +23,9 @@ export default function MicroservicesProvider({ children }) {
         headers: { "Content-Type": "application/json", token: userDetails.token },
       });
       if (data.success) setMicroservicesStatus(data.response || []);
-      else notifyError(data.errorMessage || "Failed to fetch microservices status");
+      else await notifyError(data.errorMessage || "Failed to fetch microservices status");
     } catch {
-      notifyError("Network error while fetching microservices status");
+      await "Network error while fetching microservices status");
     } finally {
       closeLoading();
     }
@@ -40,9 +40,9 @@ export default function MicroservicesProvider({ children }) {
         headers: { "Content-Type": "application/json", token: userDetails.token },
       });
       if (data.success) setStatusCheckerUrls(data.response || []);
-      else notifyError(data.errorMessage || "Failed to fetch status checker link");
+      else await data.errorMessage || "Failed to fetch status checker link");
     } catch {
-      notifyError("Network error while fetching status check link");
+      await notifyError("Network error while fetching status check link");
     } finally {
       closeLoading();
     }

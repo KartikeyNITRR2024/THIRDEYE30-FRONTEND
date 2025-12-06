@@ -33,10 +33,10 @@ export default function UserProvider({ children }) {
         setUserInfo(updatedUser);
         localStorage.setItem("userDetails", JSON.stringify(updatedUser));
       } else {
-        notifyError(data.errorMessage || "Failed to load user info");
+        await notifyError(data.errorMessage || "Failed to load user info");
       }
     } catch {
-      notifyError("Network error. Could not fetch user info.");
+      await notifyError("Network error. Could not fetch user info.");
     } finally {
       closeLoading();
     }
@@ -44,7 +44,7 @@ export default function UserProvider({ children }) {
 
   const updateUserDetails = async (payload) => {
     if (!userInfo?.userId) {
-      notifyError("User not found!");
+      await notifyError("User not found!");
       return;
     }
     const ok = await notifyConfirm("Update user details?");
@@ -65,12 +65,12 @@ export default function UserProvider({ children }) {
         const updatedUser = { ...userInfo, ...payload };
         setUserInfo(updatedUser);
         localStorage.setItem("userDetails", JSON.stringify(updatedUser));
-        notifySuccess("User details updated successfully!");
+        await notifySuccess("User details updated successfully!");
       } else {
-        notifyError(data.errorMessage || "Update failed!");
+        await notifyError(data.errorMessage || "Update failed!");
       }
     } catch {
-      notifyError("Network error. Could not update user info.");
+      await notifyError("Network error. Could not update user info.");
     } finally {
       closeLoading();
     }

@@ -23,9 +23,9 @@ export default function ConfigurationProvider({ children }) {
         headers: { "Content-Type": "application/json", token: userDetails.token },
       });
       if (data.success) setConfigData(data.response || {});
-      else notifyError(data.errorMessage || "Failed to fetch configuration");
+      else await notifyError(data.errorMessage || "Failed to fetch configuration");
     } catch {
-      notifyError("Network error while fetching configuration");
+      await notifyError("Network error while fetching configuration");
     } finally {
       closeLoading();
     }
@@ -43,16 +43,16 @@ export default function ConfigurationProvider({ children }) {
       {
          if(data.response)
          {
-             notifyInfo("Services are updating...");
+             await notifyInfo("Services are updating...");
          }
          else
          {
-             notifyInfo("Services updated");
+             await notifyInfo("Services updated");
          }
       }
-      else notifyError(data.errorMessage || "Failed to get service update status");
+      else await notifyError(data.errorMessage || "Failed to get service update status");
     } catch {
-      notifyError("Network error while fetching service update");
+      await notifyError("Network error while fetching service update");
     } finally {
       closeLoading();
     }
@@ -85,15 +85,15 @@ export default function ConfigurationProvider({ children }) {
     });
 
     if (data.success) {
-      notifySuccess("Configuration updated successfully!");
+      await notifySuccess("Configuration updated successfully!");
       setConfigData({ ...updates });
       return true;
     } else {
-      notifyError(data.errorMessage || "Failed to update configuration");
+      await notifyError(data.errorMessage || "Failed to update configuration");
       return false;
     }
   } catch {
-    notifyError("Network error while updating configuration");
+    await notifyError("Network error while updating configuration");
     return false;
   } finally {
     closeLoading();

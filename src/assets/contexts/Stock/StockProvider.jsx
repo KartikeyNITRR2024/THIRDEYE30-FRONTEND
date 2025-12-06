@@ -34,10 +34,10 @@ export default function StockProvider({ children }) {
         }));
         setStocks(formattedStocks);
       } else {
-        notifyError(data.errorMessage || "Failed to load stocks");
+        await notifyError(data.errorMessage || "Failed to load stocks");
       }
     } catch {
-      notifyError("Network error fetching stocks");
+      await notifyError("Network error fetching stocks");
     } finally {
       closeLoading();
     }
