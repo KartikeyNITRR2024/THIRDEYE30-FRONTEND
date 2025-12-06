@@ -76,7 +76,6 @@ export default function AuthProvider({ children }) {
             roles: res.roles,
             firstLogin: res.firstLogin,
           });
-          await notifySuccess(`Welcome, ${res.firstName || res.userName}!`);
         } else if (res.errorType === 1) {
           cleanAllData();
           await notifyError(res.message || "Login failed!");
