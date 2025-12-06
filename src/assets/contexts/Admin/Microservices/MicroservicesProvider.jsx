@@ -25,7 +25,7 @@ export default function MicroservicesProvider({ children }) {
       if (data.success) setMicroservicesStatus(data.response || []);
       else await notifyError(data.errorMessage || "Failed to fetch microservices status");
     } catch {
-      await "Network error while fetching microservices status");
+      await  notifyError("Network error while fetching microservices status");
     } finally {
       closeLoading();
     }
