@@ -16,12 +16,15 @@ export default function ChatID({ group, onBack }) {
   const { notifyInfo } = useContext(NotificationContext);
 
   const chatOptions = properties.ALL_ACTIVE_BOTS || [];
-  const workTypeOptions = [1];
+
+  const workTypeOptions = [
+    { value: "THRESOLD", label: "THRESOLD" }
+  ];
 
   const [newChat, setNewChat] = useState({
     chatName: "",
     chatID: "",
-    workType: 1,
+    workType: "",
   });
 
   useEffect(() => {
@@ -29,16 +32,16 @@ export default function ChatID({ group, onBack }) {
   }, [group]);
 
   const handleAdd = async () => {
-    if (!newChat.chatName || !newChat.chatID) return;
+    if (!newChat.chatName || !newChat.chatID || !newChat.workType) return;
 
     const payload = {
       chatId: newChat.chatID,
-      workType: "THRESOLD",
+      workType: newChat.workType,
       chatName: newChat.chatName,
     };
 
     await createChatID(group.id, payload);
-    setNewChat({ chatName: "", chatID: "", workType: 1 });
+    setNewChat({ chatName: "", chatID: "", workType: "" });
   };
 
   const handleDelete = async (id) => {
@@ -59,7 +62,6 @@ export default function ChatID({ group, onBack }) {
   return (
     <div className="bg-white rounded-xl p-4 shadow-md mt-6 max-w-full mx-auto">
 
-      {/* HEADER */}
       <div className="flex justify-between items-center mb-6">
         <button
           onClick={onBack}
@@ -71,7 +73,6 @@ export default function ChatID({ group, onBack }) {
         </button>
       </div>
 
-      {/* TABLE OR LOADING */}
       {loading ? (
         <LoadingPage />
       ) : (
@@ -95,7 +96,10 @@ export default function ChatID({ group, onBack }) {
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <td className="border px-2 py-2 text-black">{c.workType}</td>
+                  <td className="border px-2 py-2 text-black">
+                    {c.workType}
+                  </td>
+
                   <td className="border px-2 py-2 text-black">{c.chatName}</td>
                   <td className="border px-2 py-2 text-black">{c.chatId}</td>
 
@@ -110,7 +114,6 @@ export default function ChatID({ group, onBack }) {
                 </motion.tr>
               ))}
 
-              {/* NEW ENTRY ROW */}
               <motion.tr
                 key="new-row"
                 initial={{ opacity: 0, y: 20 }}
@@ -118,27 +121,23 @@ export default function ChatID({ group, onBack }) {
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.3 }}
               >
-                {/* Work Type */}
                 <td className="border px-2 py-2">
                   <select
                     value={newChat.workType}
                     className="w-full border rounded px-1 py-1 text-center bg-white text-black"
                     onChange={(e) =>
-                      setNewChat((prev) => ({
-                        ...prev,
-                        workType: parseInt(e.target.value),
-                      }))
+                      setNewChat((prev) => ({ ...prev, workType: e.target.value }))
                     }
                   >
+                    <option value="">Select Work Type</option>
                     {workTypeOptions.map((opt) => (
-                      <option key={opt} value={opt}>
-                        {opt}
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
                       </option>
                     ))}
                   </select>
                 </td>
 
-                {/* Chat Name */}
                 <td className="border px-2 py-2">
                   <select
                     value={newChat.chatName}
@@ -154,7 +153,6 @@ export default function ChatID({ group, onBack }) {
                   </select>
                 </td>
 
-                {/* Chat ID */}
                 <td className="border px-2 py-2">
                   <input
                     type="text"
@@ -165,21 +163,16 @@ export default function ChatID({ group, onBack }) {
                       setNewChat((prev) => ({ ...prev, chatID: e.target.value }))
                     }
                     className={`w-full text-center border rounded px-1 py-1 
-                      ${
-                        !newChat.chatName
-                          ? "bg-gray-100 text-gray-500"
-                          : "bg-white text-black"
-                      }`}
+                      ${!newChat.chatName ? "bg-gray-100 text-gray-500" : "bg-white text-black"}`}
                   />
                 </td>
 
-                {/* Add button */}
                 <td className="border px-2 py-2">
                   <button
                     onClick={handleAdd}
-                    disabled={!newChat.chatName || !newChat.chatID}
+                    disabled={!newChat.chatName || !newChat.chatID || !newChat.workType}
                     className={`mx-auto text-black hover:text-gray-600 transition ${
-                      !newChat.chatName || !newChat.chatID
+                      !newChat.chatName || !newChat.chatID || !newChat.workType
                         ? "opacity-50 cursor-not-allowed"
                         : ""
                     }`}

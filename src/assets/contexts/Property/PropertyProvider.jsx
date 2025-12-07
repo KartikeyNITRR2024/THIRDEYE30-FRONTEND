@@ -14,6 +14,9 @@ const PropertyProvider = ({ children }) => {
     MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: 0,
     TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS: [],
     MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER: 0,
+    MAXIMUM_NO_OF_STOCK_PER_GROUP: 0,
+    SELECT_ALL_STOCKS: false,
+    IS_ZERO_ALLOWED: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -46,6 +49,9 @@ const PropertyProvider = ({ children }) => {
           MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: res.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER,
           TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS: timeGaps,
           MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER: res.MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER,
+          MAXIMUM_NO_OF_STOCK_PER_GROUP: res.MAXIMUM_NO_OF_STOCK_PER_GROUP,
+          SELECT_ALL_STOCKS: res.SELECT_ALL_STOCKS,
+          IS_ZERO_ALLOWED: res.IS_ZERO_ALLOWED
         });
       } else {
         await notifyError(data.errorMessage || "Failed to load properties");

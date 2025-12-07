@@ -24,9 +24,9 @@ export default function ThresoldGroupProvider({ children }) {
       );
 
       setGroups(data?.success ? data.response || [] : []);
-      if (!data?.success) notifyError(data?.errorMessage || "Failed to load threshold groups");
+      if (!data?.success) await notifyError(data?.errorMessage || "Failed to load threshold groups");
     } catch {
-      notifyError("Network error fetching threshold groups");
+      await notifyError("Network error fetching threshold groups");
     } finally {
       closeLoading();
     }
@@ -73,12 +73,12 @@ export default function ThresoldGroupProvider({ children }) {
         { ...payload, id: data.response?.id ?? Date.now() },
       ]);
 
-      notifySuccess("Group created successfully!");
+      await notifySuccess("Group created successfully!");
     } else {
-      notifyError(data?.errorMessage || "Failed to create group");
+      await notifyError(data?.errorMessage || "Failed to create group");
     }
   } catch {
-    notifyError("Network error. Could not create group.");
+    await notifyError("Network error. Could not create group.");
   } finally {
     closeLoading();
   }
@@ -95,10 +95,10 @@ export default function ThresoldGroupProvider({ children }) {
       );
 
       if (data?.success) return data.response;
-      notifyError(data?.errorMessage || "Failed to fetch group details");
+      await notifyError(data?.errorMessage || "Failed to fetch group details");
       return null;
     } catch {
-      notifyError("Network error fetching group details.");
+      await notifyError("Network error fetching group details.");
       return null;
     } finally {
       closeLoading();
@@ -128,12 +128,12 @@ export default function ThresoldGroupProvider({ children }) {
         setGroups((prev) =>
           prev.map((g) => (g.id === groupId ? { ...g, ...payload } : g))
         );
-        notifySuccess("Group updated successfully!");
+        await notifySuccess("Group updated successfully!");
       } else {
-        notifyError(data?.errorMessage || "Failed to update group status");
+        await notifyError(data?.errorMessage || "Failed to update group status");
       }
     } catch {
-      notifyError("Network error updating group status.");
+      await notifyError("Network error updating group status.");
     } finally {
       closeLoading();
     }
@@ -153,12 +153,12 @@ export default function ThresoldGroupProvider({ children }) {
 
     if (data?.success) {
       setGroups((prev) => prev.filter((g) => g.id !== groupId));
-      notifySuccess("Group deleted successfully!");
+      await notifySuccess("Group deleted successfully!");
     } else {
-      notifyError(data?.errorMessage || "Failed to delete group");
+      await notifyError(data?.errorMessage || "Failed to delete group");
     }
   } catch {
-    notifyError("Network error deleting group.");
+    await notifyError("Network error deleting group.");
   } finally {
     closeLoading();
   }

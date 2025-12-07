@@ -4,16 +4,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import PropertyContext from "../../contexts/Property/PropertyContext";
 import ThresoldContext from "../../contexts/MarketThresold/Thresold/ThresoldContext";
 import LoadingPage from "../LoadingComponents/LoadingPage";
+import NotificationContext from "../../contexts/Notification/NotificationContext";
 
 export default function Thresold({ group, onBack }) {
+  const { notifyError } = useContext(NotificationContext);
   const { properties } = useContext(PropertyContext);
   const { thresholds, loading, fetchThresholds, addThreshold, deleteThreshold } =
     useContext(ThresoldContext);
 
   const [newThreshold, setNewThreshold] = useState({
-    gapSeconds: properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS[0] || 10,
+    gapSeconds: "",
     priceGap: "",
-    type: 0,
+    type: "",
   });
 
   useEffect(() => {
@@ -21,18 +23,38 @@ export default function Thresold({ group, onBack }) {
   }, [group?.id]);
 
   const handleAddNew = () => {
-    if (!newThreshold.gapSeconds || !newThreshold.priceGap) return;
+    if (newThreshold.gapSeconds === "") {
+      notifyError("Please select gap.");
+      return;
+    }
+
+    if (newThreshold.type === "") {
+      notifyError("Please select type.");
+      return;
+    }
+
+    if (newThreshold.priceGap === "") {
+      notifyError("Price gap is required.");
+      return;
+    }
+
+    const price = Number(newThreshold.priceGap);
+
+    if (properties.IS_ZERO_ALLOWED == 0 && price === 0) {
+      notifyError("Price gap cannot be zero.");
+      return;
+    }
 
     addThreshold(group.id, {
-      priceGap: Number(newThreshold.priceGap),
+      priceGap: price,
       timeGapInSeconds: Number(newThreshold.gapSeconds),
       type: Number(newThreshold.type),
     });
 
     setNewThreshold({
-      gapSeconds: properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS[0] || 10,
+      gapSeconds: "",
       priceGap: "",
-      type: 0,
+      type: "",
     });
   };
 
@@ -53,7 +75,6 @@ export default function Thresold({ group, onBack }) {
         transition={{ duration: 0.3 }}
         className="bg-white bg-opacity-95 rounded-xl p-4 shadow-md mt-6 max-w-full mx-auto"
       >
-
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={onBack}
@@ -150,6 +171,7 @@ export default function Thresold({ group, onBack }) {
                           }
                           className="w-full border rounded px-2 py-1 text-center appearance-none"
                         >
+                          <option value="">Select Gap</option>
                           {properties.TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS.map((opt) => (
                             <option key={opt} value={opt}>
                               {opt}
@@ -178,11 +200,9 @@ export default function Thresold({ group, onBack }) {
                           }
                           className="w-full border rounded px-2 py-1 text-center appearance-none"
                         >
-                          {[0, 1].map((opt) => (
-                            <option key={opt} value={opt}>
-                              {opt == 0 ? "Percent" : "Price"}
-                            </option>
-                          ))}
+                          <option value="">Select Type</option>
+                          <option value={0}>Percent</option>
+                          <option value={1}>Price</option>
                         </select>
                       </td>
 
