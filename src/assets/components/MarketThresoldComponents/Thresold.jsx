@@ -5,8 +5,10 @@ import PropertyContext from "../../contexts/Property/PropertyContext";
 import ThresoldContext from "../../contexts/MarketThresold/Thresold/ThresoldContext";
 import LoadingPage from "../LoadingComponents/LoadingPage";
 import NotificationContext from "../../contexts/Notification/NotificationContext";
+import AuthContext from "../../contexts/Auth/AuthContext";
 
 export default function Thresold({ group, onBack }) {
+  const { userDetails } = useContext(AuthContext);
   const { notifyError } = useContext(NotificationContext);
   const { properties } = useContext(PropertyContext);
   const { thresholds, loading, fetchThresholds, addThreshold, deleteThreshold } =
@@ -40,10 +42,17 @@ export default function Thresold({ group, onBack }) {
 
     const price = Number(newThreshold.priceGap);
 
+    if (!userDetails.roles.includes("ROLE_ADMIN") && properties.IS_ZERO_ALLOWED == 2 && price === 0) {
+      notifyError("Price gap cannot be zero.");
+      return;
+    }
+
     if (properties.IS_ZERO_ALLOWED == 0 && price === 0) {
       notifyError("Price gap cannot be zero.");
       return;
     }
+
+
 
     addThreshold(group.id, {
       priceGap: price,
