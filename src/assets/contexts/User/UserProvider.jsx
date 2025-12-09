@@ -14,7 +14,10 @@ export default function UserProvider({ children }) {
 
   const fetchUserInfo = async () => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    if(userDetails.firstLogin)
+    {
+        notifyLoading();
+    }
     try {
       const { data } = await api.call(`um/user/users/${userDetails.userId}`, {
         method: "GET",
@@ -38,7 +41,10 @@ export default function UserProvider({ children }) {
     } catch {
       await notifyError("Network error. Could not fetch user info.");
     } finally {
-      closeLoading();
+      if(userDetails.firstLogin)
+      {
+        closeLoading();
+      }
     }
   };
 

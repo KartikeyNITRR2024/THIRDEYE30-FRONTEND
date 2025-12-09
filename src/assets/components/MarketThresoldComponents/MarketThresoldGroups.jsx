@@ -19,8 +19,6 @@ export default function MarketThresoldGroups({ onGroupClick }) {
   const reachedMax =
     groups.length >= properties.MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER;
 
-  if (loading) return <LoadingPage />;
-
   return (
     <div>
       {/* Header showing count */}

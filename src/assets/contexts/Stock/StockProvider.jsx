@@ -13,8 +13,8 @@ export default function StockProvider({ children }) {
 
   const fetchStocks = async () => {
     if (!userDetails?.token) return;
-    setLoading(true);
-    notifyLoading();
+    // setLoading(true);
+    // notifyLoading();
     try {
       const { data } = await api.call("sm/stocks/all", {
         method: "GET",
@@ -39,7 +39,7 @@ export default function StockProvider({ children }) {
     } catch {
       await notifyError("Network error fetching stocks");
     } finally {
-      closeLoading();
+      // closeLoading();
     }
   };
 

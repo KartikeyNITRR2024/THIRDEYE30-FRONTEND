@@ -94,7 +94,13 @@ export default function ThresoldGroupProvider({ children }) {
         { method: "GET", headers: { "Content-Type": "application/json", token: userDetails.token } }
       );
 
-      if (data?.success) return data.response;
+      if (data?.success)
+      {
+         setGroups((prev) =>
+           prev.map((g) => (g.id === groupId ? { ...g, ...data.response } : g))
+         );
+         return data.response;
+      }
       await notifyError(data?.errorMessage || "Failed to fetch group details");
       return null;
     } catch {

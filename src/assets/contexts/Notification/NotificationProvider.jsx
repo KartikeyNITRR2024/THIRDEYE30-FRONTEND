@@ -49,13 +49,15 @@ const notifyInfo = async (message = "") => {
     return result;
   };
 
-  // LOADING
-  let loadingCount = 0;
+let loadingCount = 0;
+let loadingStartTime = null;
+
 
 const notifyLoading = (message = "Loading...") => {
   loadingCount++;
-
   if (loadingCount === 1) {
+    loadingStartTime = performance.now();
+
     MySwal.fire({
       title: message,
       allowOutsideClick: false,
@@ -66,11 +68,18 @@ const notifyLoading = (message = "Loading...") => {
   }
 };
 
+
 const closeLoading = () => {
   loadingCount--;
 
   if (loadingCount <= 0) {
     loadingCount = 0;
+    if (loadingStartTime !== null) {
+      const elapsed = performance.now() - loadingStartTime;
+      console.log(`Loader visible for ${elapsed.toFixed(2)} ms`);
+      loadingStartTime = null;
+    }
+
     MySwal.close();
   }
 };

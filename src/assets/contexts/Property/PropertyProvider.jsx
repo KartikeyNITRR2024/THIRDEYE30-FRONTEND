@@ -11,7 +11,7 @@ const PropertyProvider = ({ children }) => {
   const [properties, setProperties] = useState({
     MAXIMUM_NO_OF_THRESOLD_PER_GROUP: 0,
     ALL_ACTIVE_BOTS: [],
-    MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: 0,
+    MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: 3,
     TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS: [],
     MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER: 0,
     MAXIMUM_NO_OF_STOCK_PER_GROUP: 0,
@@ -24,14 +24,13 @@ const PropertyProvider = ({ children }) => {
 
   const fetchProperties = async () => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    // notifyLoading();
 
     try {
       const { data } = await api.call(`pm/properties/frontend`, {
         method: "GET",
         headers: { token: userDetails.token },
       });
-
       if (data.success) {
         const res = data.response;
         const bots = res.ALL_ACTIVE_BOTS
@@ -59,7 +58,7 @@ const PropertyProvider = ({ children }) => {
     } catch {
       await notifyError("Network error while fetching properties");
     } finally {
-      closeLoading();
+      // closeLoading();
     }
   };
 
@@ -67,13 +66,10 @@ const PropertyProvider = ({ children }) => {
     if (login) {
       fetchProperties();
     } else {
-      setProperties({
-        MAXIMUM_NO_OF_THRESOLD_PER_GROUP: 0,
-        ALL_ACTIVE_BOTS: [],
-        MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: 0,
-        TIME_GAP_LIST_FOR_THRESOLD_IN_SECONDS: [],
-        MAXIMUM_NO_OF_HOLDED_STOCK_PER_USER: 0,
-      });
+      setProperties(prev => ({
+      ...prev,
+      MAXIMUM_NO_OF_THRESOLD_GROUP_PER_USER: 3,
+      }));
     }
   }, [login]);
 
