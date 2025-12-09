@@ -76,7 +76,7 @@ const closeLoading = () => {
     loadingCount = 0;
     if (loadingStartTime !== null) {
       const elapsed = performance.now() - loadingStartTime;
-      console.log(`Loader visible for ${elapsed.toFixed(2)} ms`);
+      //console.log(`Loader visible for ${elapsed.toFixed(2)} ms`);
       loadingStartTime = null;
     }
 
