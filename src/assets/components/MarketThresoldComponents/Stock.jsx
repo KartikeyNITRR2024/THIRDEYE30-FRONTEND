@@ -5,17 +5,21 @@ import ThresoldGroupContext from "../../contexts/MarketThresold/ThresoldGroup/Th
 import StockContext from "../../contexts/Stock/StockContext";
 import PropertyContext from "../../contexts/Property/PropertyContext";
 import NotificationContext from "../../contexts/Notification/NotificationContext";
+import { GoTriangleDown, GoTriangleUp } from "react-icons/go";
+import StockHistory from "./StockHistory";
 
 export default function Stock({ group, onBack }) {
   const { notifyError } = useContext(NotificationContext);
-  const { updateGroupStatus, fetchThresoldGroups } = useContext(ThresoldGroupContext);
+  const { updateGroupStatus, fetchThresoldGroups } =
+    useContext(ThresoldGroupContext);
   const { properties } = useContext(PropertyContext);
-  const { stocks } = useContext(StockContext);
+  const { stocks, fetchStockHistory } = useContext(StockContext);
 
   const [selectedStocks, setSelectedStocks] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [didInitialSort, setDidInitialSort] = useState(false);
+  const [activeStock, setActiveStock] = useState(null);
 
   useEffect(() => {
     if (!group || !stocks?.length) return;
@@ -23,12 +27,11 @@ export default function Stock({ group, onBack }) {
     if (group.allStocks) {
       setSelectedStocks(stocks.map((s) => s.id));
     } else if (group.stockList) {
-      const chunkSize = 5;
-      const chunks = group.stockList.match(new RegExp(`.{1,${chunkSize}}`, "g")) || [];
-      const ids = chunks.map((chunk) => parseInt(chunk, 10)).filter((n) => !isNaN(n));
-      setSelectedStocks(ids);
+      const chunks = group.stockList.match(/.{1,5}/g) || [];
+      setSelectedStocks(
+        chunks.map((c) => parseInt(c, 10)).filter((n) => !isNaN(n))
+      );
     }
-
     setDidInitialSort(true);
   }, [group, stocks]);
 
@@ -39,137 +42,52 @@ export default function Stock({ group, onBack }) {
 
     if (!didInitialSort) return list;
 
-    const selectedFirst = [...list].sort((a, b) => {
+    return [...list].sort((a, b) => {
       const aSel = selectedStocks.includes(a.id);
       const bSel = selectedStocks.includes(b.id);
       if (aSel && !bSel) return -1;
       if (!aSel && bSel) return 1;
       return a.name.localeCompare(b.name);
     });
-
-    return selectedFirst;
   }, [stocks, searchTerm, selectedStocks, didInitialSort]);
 
   const toggleSelect = (id) => {
-    setSelectedStocks((prev) => {
-      const isSelected = prev.includes(id);
-
-      if (!isSelected) {
-        if (properties?.SELECT_ALL_STOCKS === 0) {
-          const max = properties.MAXIMUM_NO_OF_STOCK_PER_GROUP;
-          if (prev.length >= max) {
-            notifyError(`You can select maximum ${max} stocks.`);
-            return prev;
-          }
-        }
-        return [...prev, id];
-      } else {
-        return prev.filter((s) => s !== id);
-      }
-    });
+    setSelectedStocks((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
   };
 
-  const toggleSelectAll = () => {
-    if (selectedStocks.length === filteredStocks.length) {
-      setSelectedStocks([]);
-      return;
-    }
-
-    if (properties?.SELECT_ALL_STOCKS === 1) {
-      setSelectedStocks(filteredStocks.map((s) => s.id));
-      return;
-    }
-
-    const limit = properties.MAXIMUM_NO_OF_STOCK_PER_GROUP;
-    if (filteredStocks.length > limit) {
-      notifyError(`You can select maximum ${limit} stocks.`);
-      setSelectedStocks(filteredStocks.slice(0, limit).map((s) => s.id));
-      return;
-    }
-
-    setSelectedStocks(filteredStocks.map((s) => s.id));
-  };
-
-  const handleSubmit = async () => {
-    if (submitting) return;
-    setSubmitting(true);
-
-    const allSelected = selectedStocks.length === stocks.length;
-
-    const stockIdsString = selectedStocks
-      .sort((a, b) => a - b)
-      .map((id) => id.toString().padStart(5, "0"))
-      .join("");
-
-    await updateGroupStatus(group.id, undefined, allSelected, allSelected ? "" : stockIdsString);
-    await fetchThresoldGroups();
-
-    if (group) {
-      group.allStocks = allSelected;
-      group.stockList = allSelected ? "" : stockIdsString;
-    }
-
-    setSubmitting(false);
+  const handleStockClick = async (stock) => {
+    setActiveStock(stock);
+    await fetchStockHistory(stock.id);
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key="stock-table"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: 30 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white bg-opacity-95 rounded-xl p-4 shadow-md mt-6 max-w-full mx-auto"
-      >
-        <div className="flex justify-between items-center mb-6">
+    <>
+      <AnimatePresence mode="wait">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 30 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white bg-opacity-95 rounded-xl p-4 shadow-md mt-6"
+        >
           <button
             onClick={onBack}
-            className="flex items-center gap-2 bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 transition"
+            className="flex items-center gap-2 bg-gray-200 text-black px-4 py-2 rounded-lg mb-4"
           >
             <MdArrowBack size={18} />
             Back
           </button>
 
-          {properties?.SELECT_ALL_STOCKS === 1 && (
-            <button
-              onClick={toggleSelectAll}
-              disabled={submitting}
-              className="flex items-center gap-2 bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 transition"
-            >
-              {selectedStocks.length === filteredStocks.length ? "Deselect All" : "Select All"}
-            </button>
-          )}
+          <input
+            type="text"
+            placeholder="Search stocks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="border rounded px-2 py-1 text-sm w-64 mb-4"
+          />
 
-          <button
-            onClick={handleSubmit}
-            disabled={submitting}
-            className="flex items-center gap-2 bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm hover:bg-gray-300 transition"
-          >
-            {submitting ? "Submitting..." : "Submit"}
-          </button>
-
-          {properties?.SELECT_ALL_STOCKS === 0 ? ( 
-            <div className="bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm font-medium text-sm md:text-base flex items-center">
-              {selectedStocks.length} / {properties.MAXIMUM_NO_OF_STOCK_PER_GROUP} selected
-            </div>
-          ) : (
-            <div className="bg-gray-200 text-black px-4 py-2 rounded-lg shadow-sm font-medium text-sm md:text-base flex items-center">
-              {selectedStocks.length} selected
-            </div>
-          )}
-
-        </div>
-
-        <input
-          type="text"
-          placeholder="Search stocks..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="border rounded px-2 py-1 text-sm w-full md:w-64 mb-4"
-        />
-
-        <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse text-sm text-center">
             <thead>
               <tr className="bg-gray-100">
@@ -177,22 +95,59 @@ export default function Stock({ group, onBack }) {
                 <th className="border px-2 py-2">Select</th>
               </tr>
             </thead>
+
             <tbody>
-              {filteredStocks.map((stock) => (
-                <tr key={stock.id}>
-                  <td className="border px-2 py-2 text-left">
-                    {stock.name + " " + stock.marketCode}
-                  </td>
-                  <td className="border px-2 py-2">
-                    <input
-                      type="checkbox"
-                      checked={selectedStocks.includes(stock.id)}
-                      onChange={() => toggleSelect(stock.id)}
-                      className="w-5 h-5 cursor-pointer appearance-none border border-black rounded-sm checked:bg-black"
-                    />
-                  </td>
-                </tr>
-              ))}
+              {filteredStocks.map((stock) => {
+                const valid =
+                  stock.price != null &&
+                  stock.todaysOpeningPrice != null;
+
+                let percentage = null;
+                if (valid) {
+                  percentage =
+                    ((stock.price - stock.todaysOpeningPrice) * 100) /
+                    stock.todaysOpeningPrice;
+                }
+
+                return (
+                  <tr key={stock.id}>
+                    <td
+                      className="border px-2 py-2 text-left cursor-pointer"
+                      onClick={() => handleStockClick(stock)}
+                    >
+                      <span>
+                        {stock.name} {stock.marketCode}
+                      </span>
+
+                      {percentage !== null && (
+                        <span
+                          className={`ml-2 font-medium inline-flex items-center gap-1 ${
+                            percentage >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {percentage >= 0 ? (
+                            <GoTriangleUp />
+                          ) : (
+                            <GoTriangleDown />
+                          )}
+                          {percentage.toFixed(2)}%
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="border px-2 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedStocks.includes(stock.id)}
+                        onChange={() => toggleSelect(stock.id)}
+                        className="w-5 h-5 cursor-pointer appearance-none border border-black rounded-sm checked:bg-black"
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
 
               {filteredStocks.length === 0 && (
                 <tr>
@@ -203,8 +158,15 @@ export default function Stock({ group, onBack }) {
               )}
             </tbody>
           </table>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      </AnimatePresence>
+
+      {activeStock && (
+        <StockHistory
+          stock={activeStock}
+          onClose={() => setActiveStock(null)}
+        />
+      )}
+    </>
   );
 }
