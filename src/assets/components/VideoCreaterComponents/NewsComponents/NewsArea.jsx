@@ -1,9 +1,9 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useRef } from "react";
 import { 
   MdArrowBack, MdRefresh, MdEdit, MdDelete, MdClose, 
   MdNewspaper, MdAudiotrack, MdImage, MdColorLens, 
   MdAutoDelete, MdLink, MdAdd, MdLayers, MdContentCopy,
-  MdFingerprint, MdCheckCircle
+  MdFingerprint, MdCheckCircle, MdUploadFile
 } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
 import NewsContext from "../../../contexts/VideoCreater/News/NewsContext";
@@ -11,12 +11,14 @@ import VideoDetailsContext from "../../../contexts/VideoCreater/VideoDetails/Vid
 import NotificationContext from "../../../contexts/Notification/NotificationContext";
 
 export default function NewsArea({ onBack }) {
-  const { newsList, fetchNews, addNews, updateNews, deleteNews } = useContext(NewsContext);
+  const { newsList, fetchNews, addNews, updateNews, deleteNews, uploadNewsCsv } = useContext(NewsContext);
   const { detailsList } = useContext(VideoDetailsContext);
-  const { notifySuccess } = useContext(NotificationContext);
+  const { notifySuccess, notifyError } = useContext(NotificationContext);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [uploadTargetId, setUploadTargetId] = useState("");
+  const fileInputRef = useRef(null);
   
   const initialForm = {
     videoDetailsId: "",
@@ -39,18 +41,22 @@ export default function NewsArea({ onBack }) {
     setIsModalOpen(false);
   };
 
+  const handleCsvUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!uploadTargetId) {
+        notifyError("Select a Target Project first");
+        e.target.value = null;
+        return;
+    }
+    const success = await uploadNewsCsv(file, uploadTargetId);
+    if (success) e.target.value = null;
+  };
+
   const handleAction = async () => {
     if (!formData.videoDetailsId || !formData.header) return;
-    
-    const payload = {
-      ...formData,
-      header: formData.header.toUpperCase().trim(),
-    };
-
-    const success = editingId 
-      ? await updateNews(editingId, payload) 
-      : await addNews(payload);
-      
+    const payload = { ...formData, header: formData.header.toUpperCase().trim() };
+    const success = editingId ? await updateNews(editingId, payload) : await addNews(payload);
     if (success) resetForm();
   };
 
@@ -70,7 +76,7 @@ export default function NewsArea({ onBack }) {
     <div className="relative min-h-screen bg-slate-50/50 p-3 md:p-6 font-sans">
       
       {/* HEADER BAR */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-3">
           <button onClick={onBack} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition text-slate-600">
             <MdArrowBack size={20} />
@@ -81,13 +87,34 @@ export default function NewsArea({ onBack }) {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button onClick={() => fetchNews()} className="flex-1 sm:flex-none bg-white p-2.5 rounded-lg text-slate-400 border border-slate-200 hover:text-slate-900 transition shadow-sm">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          {/* Target Selector for CSV */}
+          <select 
+            className="flex-1 lg:flex-none bg-slate-50 border-2 border-slate-100 rounded-lg px-3 py-2 text-[10px] font-black uppercase outline-none focus:border-emerald-500 transition"
+            value={uploadTargetId}
+            onChange={(e) => setUploadTargetId(e.target.value)}
+          >
+            <option value="">Select Project for CSV...</option>
+            {detailsList.map(d => <option key={d.id} value={d.id}>{d.introHeader || d.id.slice(0,8)}</option>)}
+          </select>
+
+          {/* Hidden File Input */}
+          <input type="file" ref={fileInputRef} onChange={handleCsvUpload} accept=".csv" className="hidden" />
+          
+          <button 
+            onClick={() => fileInputRef.current.click()}
+            className="flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-lg hover:bg-emerald-100 text-[10px] font-black transition uppercase tracking-widest"
+          >
+            <MdUploadFile size={18} /> CSV Upload
+          </button>
+
+          <button onClick={() => fetchNews()} className="bg-white p-2.5 rounded-lg text-slate-400 border border-slate-200 hover:text-slate-900 transition shadow-sm">
             <MdRefresh size={20} />
           </button>
+
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="flex-3 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-black text-[10px] font-black transition uppercase tracking-widest shadow-md active:scale-95"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-black text-[10px] font-black transition uppercase tracking-widest shadow-md active:scale-95"
           >
             <MdAdd size={18} /> Compose Segment
           </button>
@@ -147,7 +174,7 @@ export default function NewsArea({ onBack }) {
         })}
       </div>
 
-      {/* COMPOSITION MODAL */}
+      {/* COMPOSITION MODAL (UNMODIFIED AS REQUESTED) */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
@@ -199,7 +226,6 @@ export default function NewsArea({ onBack }) {
                    <div className="p-5 bg-slate-900 rounded-2xl text-white space-y-5">
                       <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-2">Multimedia Sync</p>
                       
-                      {/* IMAGE UUID */}
                       <div className="space-y-2">
                          <div className="flex justify-between items-center">
                             <span className="text-[8px] font-black uppercase text-sky-400 flex items-center gap-1"><MdImage/> Image Link</span>
@@ -212,7 +238,6 @@ export default function NewsArea({ onBack }) {
                          </div>
                       </div>
 
-                      {/* AUDIO UUID */}
                       <div className="space-y-2">
                          <div className="flex justify-between items-center">
                             <span className="text-[8px] font-black uppercase text-purple-400 flex items-center gap-1"><MdAudiotrack/> Audio Link</span>
