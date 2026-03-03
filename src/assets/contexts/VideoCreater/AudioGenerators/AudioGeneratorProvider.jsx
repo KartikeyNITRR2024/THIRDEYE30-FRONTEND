@@ -12,6 +12,11 @@ export default function AudioGeneratorProvider({ children }) {
   const [audioList, setAudioList] = useState([]);
   const api = new ApiCaller();
 
+  const getHeaders = () => ({ 
+    "Content-Type": "application/json", 
+    token: userDetails.token 
+  });
+
   const getBase = () => {
     return typeof api.getBaseUrl === 'function' ? api.getBaseUrl() : "http://localhost:8080/";
   };
@@ -34,7 +39,7 @@ export default function AudioGeneratorProvider({ children }) {
     try {
       const { data } = await api.call("vm2/audio-generate", {
         method: "GET",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
       });
       
       if (data.success) {
@@ -42,6 +47,7 @@ export default function AudioGeneratorProvider({ children }) {
           new Date(b.createdTime) - new Date(a.createdTime)
         );
         setAudioList(sorted);
+        // We don't usually notifySuccess on simple fetches to avoid spamming the user
       }
     } catch (err) {
       if (showLoading) notifyError("Failed to fetch audio list");
@@ -57,15 +63,16 @@ export default function AudioGeneratorProvider({ children }) {
     try {
       const { data } = await api.call("vm2/audio-generate", {
         method: "POST",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
         body: JSON.stringify({ content, autoDelete, isAudioGenerated: false }),
       });
       if (data.success) {
-        notifySuccess("Generation Started");
-        fetchAudioList(false);
+        notifySuccess("Audio Generation Started Successfully");
+        await fetchAudioList(false); // Silent refresh to update list
+        return true;
       }
     } catch {
-      notifyError("Creation failed");
+      notifyError("Audio Creation Failed");
     } finally {
       closeLoading();
     }
@@ -74,18 +81,20 @@ export default function AudioGeneratorProvider({ children }) {
   // DELETE
   const deleteAudio = async (id) => {
     if (!userDetails?.token) return;
+    if (!window.confirm("Are you sure you want to delete this audio?")) return;
+    
     notifyLoading();
     try {
       const { data } = await api.call(`vm2/audio-generate/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
       });
       if (data.success) {
         setAudioList(prev => prev.filter(item => item.id !== id));
-        notifySuccess("Deleted");
+        notifySuccess("Audio Deleted Successfully");
       }
     } catch {
-      notifyError("Delete failed");
+      notifyError("Audio Delete Failed");
     } finally {
       closeLoading();
     }
@@ -96,15 +105,18 @@ export default function AudioGeneratorProvider({ children }) {
     let interval;
     if (page === 2 && pendingCount > 0) {
       interval = setInterval(() => {
-        fetchAudioList(false); // Silent refresh
+        fetchAudioList(false); // Silent refresh (no loading spinner)
       }, 5000);
     }
     return () => clearInterval(interval);
   }, [page, pendingCount, fetchAudioList]);
 
   useEffect(() => {
-    if (page === 2) fetchAudioList();
-    else setAudioList([]);
+    if (page === 2) {
+      fetchAudioList();
+    } else {
+      setAudioList([]);
+    }
   }, [page, fetchAudioList]);
 
   return (

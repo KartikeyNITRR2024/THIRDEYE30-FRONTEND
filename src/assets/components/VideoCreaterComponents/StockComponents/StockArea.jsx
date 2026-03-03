@@ -27,7 +27,6 @@ export default function StockArea({ onBack }) {
   const renderPage = () => {
     switch (page) {
       case 91:
-        // Return to page 3 (or whatever ID your StockArea is assigned to)
         return <StockGroupArea onBack={() => updatePage(3)} />;
       case 92:
         return <SingleStockArea onBack={() => updatePage(3)} />;

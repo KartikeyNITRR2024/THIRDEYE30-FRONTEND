@@ -12,13 +12,19 @@ export default function NewsProvider({ children }) {
   const [newsList, setNewsList] = useState([]);
   const api = new ApiCaller();
 
+  const getHeaders = () => ({
+    "Content-Type": "application/json",
+    token: userDetails.token,
+  });
+
+  // GET ALL NEWS
   const fetchNews = useCallback(async (silent = false) => {
     if (!userDetails?.token) return;
     if (!silent) notifyLoading();
     try {
       const { data } = await api.call("vm2/news", {
         method: "GET",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
       });
       if (data.success) {
         // Sort by createdTime descending
@@ -28,76 +34,85 @@ export default function NewsProvider({ children }) {
         setNewsList(sorted);
       }
     } catch {
-      if (!silent) notifyError("Failed to fetch news");
+      if (!silent) notifyError("Failed to fetch news list");
     } finally {
       if (!silent) closeLoading();
     }
   }, [userDetails?.token]);
 
+  // CREATE NEWS
   const addNews = async (dto) => {
     if (!userDetails?.token) return;
     notifyLoading();
     try {
       const { data } = await api.call("vm2/news", {
         method: "POST",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
         body: JSON.stringify(dto),
       });
       if (data.success) {
-        notifySuccess("News Created");
-        await fetchNews(true);
+        notifySuccess("News Created Successfully");
+        await fetchNews(true); // Silent refresh
+        return true;
       }
     } catch {
-      notifyError("Creation failed");
+      notifyError("News Creation Failed");
     } finally {
       closeLoading();
     }
   };
 
+  // UPDATE NEWS
   const updateNews = async (id, dto) => {
     if (!userDetails?.token) return;
     notifyLoading();
     try {
       const { data } = await api.call(`vm2/news/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
         body: JSON.stringify(dto),
       });
       if (data.success) {
-        notifySuccess("News Updated");
-        await fetchNews(true);
+        notifySuccess("News Updated Successfully");
+        await fetchNews(true); // Silent refresh
         return true;
       }
     } catch {
-      notifyError("Update failed");
+      notifyError("News Update Failed");
       return false;
     } finally {
       closeLoading();
     }
   };
 
+  // DELETE NEWS
   const deleteNews = async (id) => {
     if (!userDetails?.token) return;
+    if (!window.confirm("Are you sure you want to delete this news entry?")) return;
+
     notifyLoading();
     try {
       const { data } = await api.call(`vm2/news/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
       });
       if (data.success) {
         setNewsList(prev => prev.filter(n => n.id !== id));
-        notifySuccess("News Deleted");
+        notifySuccess("News Deleted Successfully");
       }
     } catch {
-      notifyError("Delete failed");
+      notifyError("News Delete Failed");
     } finally {
       closeLoading();
     }
   };
 
   useEffect(() => {
-    if (page === 6) fetchNews();
-    else setNewsList([]);
+    if (page === 6) {
+      fetchNews();
+    } else {
+      setNewsList([]);
+    }
   }, [page, fetchNews]);
 
   return (

@@ -31,6 +31,14 @@ import VideoDetailsProvider from "./assets/contexts/VideoCreater/VideoDetails/Vi
 import NewsProvider from "./assets/contexts/VideoCreater/News/NewsProvider";
 import VideoStockProvider from "./assets/contexts/VideoCreater/Stock/StockProvider";
 import MultiMediaProvider from "./assets/contexts/VideoCreater/MultiMedia/MultiMediaProvider";
+import VideoSettingProvider from "./assets/contexts/VideoCreater/VideoSetting/VideoSettingProvider";
+import IntroVideoProvider from "./assets/contexts/VideoCreater/IntroVideo/IntroVideoProvider";
+import OutroVideoProvider from "./assets/contexts/VideoCreater/OutroVideo/OutroVideoProvider";
+import ContentVideoProvider from "./assets/contexts/VideoCreater/ContentVideo/ContentVideoProvider";
+import HeaderProvider from "./assets/contexts/VideoCreater/Header/HeaderProvider";
+import StockRaceProvider from "./assets/contexts/VideoCreater/StockRace/StockRaceProvider";
+import NewsImageProvider from "./assets/contexts/VideoCreater/NewsImage/NewsImageProvider";
+import NewsTextSoundProvider from "./assets/contexts/VideoCreater/NewsTextSound/NewsTextSoundProvider"; 
 
 function App() {
   return (
@@ -80,7 +88,23 @@ export default function AppWrapper() {
                                               <CurrentVideoProvider>
                                                 <VideoDetailsProvider>
                                                   <NewsProvider>
-                                                    <App />
+                                                    <VideoSettingProvider>
+                                                      <IntroVideoProvider>
+                                                        <OutroVideoProvider>
+                                                          <ContentVideoProvider>
+                                                            <HeaderProvider>
+                                                              <StockRaceProvider>
+                                                                <NewsImageProvider>
+                                                                  <NewsTextSoundProvider>
+                                                                    <App />
+                                                                  </NewsTextSoundProvider>
+                                                                </NewsImageProvider>
+                                                              </StockRaceProvider>
+                                                            </HeaderProvider>
+                                                          </ContentVideoProvider>
+                                                        </OutroVideoProvider>
+                                                      </IntroVideoProvider>
+                                                    </VideoSettingProvider>
                                                   </NewsProvider>
                                                 </VideoDetailsProvider>
                                               </CurrentVideoProvider>

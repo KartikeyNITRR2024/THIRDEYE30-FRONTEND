@@ -14,7 +14,6 @@ export default function StockProvider({ children }) {
   const [stocks, setStocks] = useState([]);
   const api = new ApiCaller();
 
-  // --- COMMON HEADERS ---
   const getHeaders = () => ({ "Content-Type": "application/json", token: userDetails.token });
 
   // --- GROUP CRUD ---
@@ -24,56 +23,93 @@ export default function StockProvider({ children }) {
     try {
       const { data } = await api.call("vm2/stock-group", { method: "GET", headers: getHeaders() });
       if (data.success) setGroups(data.response || []);
-    } catch { if (!silent) notifyError("Fetch Groups Failed"); }
-    finally { if (!silent) closeLoading(); }
+    } catch { 
+      if (!silent) notifyError("Fetch Groups Failed"); 
+    } finally { 
+      if (!silent) closeLoading(); 
+    }
   }, [userDetails?.token]);
 
   const addGroup = async (dto) => {
     notifyLoading();
     try {
       const { data } = await api.call("vm2/stock-group", { method: "POST", headers: getHeaders(), body: JSON.stringify(dto) });
-      if (data.success) { notifySuccess("Group Created"); fetchGroups(true); }
-    } catch { notifyError("Create Failed"); } finally { closeLoading(); }
+      if (data.success) { 
+        notifySuccess("Stock Group Created Successfully"); 
+        await fetchGroups(true); 
+        return true;
+      }
+    } catch { 
+      notifyError("Group Creation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   const updateGroup = async (id, dto) => {
     notifyLoading();
     try {
       const { data } = await api.call(`vm2/stock-group/${id}`, { method: "PUT", headers: getHeaders(), body: JSON.stringify(dto) });
-      if (data.success) { notifySuccess("Group Updated"); fetchGroups(true); return true; }
-    } catch { notifyError("Update Failed"); } finally { closeLoading(); }
+      if (data.success) { 
+        notifySuccess("Stock Group Updated Successfully"); 
+        await fetchGroups(true); 
+        return true; 
+      }
+    } catch { 
+      notifyError("Group Update Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   const deleteGroup = async (id) => {
-    if(!window.confirm("Delete this group?")) return;
+    if(!window.confirm("Are you sure you want to delete this group? All associated logic may be affected.")) return;
     notifyLoading();
     try {
-      await api.call(`vm2/stock-group/${id}`, { method: "DELETE", headers: getHeaders() });
-      notifySuccess("Group Deleted");
-      fetchGroups(true);
-    } catch { notifyError("Delete Failed"); } finally { closeLoading(); }
+      const { data } = await api.call(`vm2/stock-group/${id}`, { method: "DELETE", headers: getHeaders() });
+      if (data.success) {
+        notifySuccess("Stock Group Deleted Successfully");
+        await fetchGroups(true);
+      }
+    } catch { 
+      notifyError("Group Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   const toggleGroupActive = async (id, status) => {
+    notifyLoading();
     try {
-      await api.call(`vm2/stock-group/${id}/active?status=${status}`, { method: "PATCH", headers: getHeaders() });
-      fetchGroups(true);
-    } catch { notifyError("Toggle Failed"); }
+      const { data } = await api.call(`vm2/stock-group/${id}/active?status=${status}`, { method: "PATCH", headers: getHeaders() });
+      if (data.success) {
+        notifySuccess(`Group ${status ? 'Activated' : 'Deactivated'}`);
+        await fetchGroups(true);
+      }
+    } catch { 
+      notifyError("Toggle Failed"); 
+    } finally {
+      closeLoading();
+    }
   };
 
   // --- STOCK CRUD ---
-  const fetchStocks = useCallback(async () => {
+  const fetchStocks = useCallback(async (silent = true) => {
     if (!userDetails?.token) return;
+    if (!silent) notifyLoading();
     try {
       const { data } = await api.call("vm2/stock", { method: "GET", headers: getHeaders() });
       if (data.success) setStocks(data.response || []);
-    } catch { console.error("Stock Fetch Failed"); }
+    } catch { 
+      if (!silent) notifyError("Stock Fetch Failed");
+    } finally {
+      if (!silent) closeLoading();
+    }
   }, [userDetails?.token]);
 
   const addStock = async (dto) => {
-    // Basic validation
     if (!dto.groupId || !dto.name) {
-      notifyError("Missing Group or Ticker");
+      notifyError("Missing Group or Ticker Name");
       return;
     }
     notifyLoading();
@@ -84,12 +120,12 @@ export default function StockProvider({ children }) {
         body: JSON.stringify(dto) 
       });
       if (data.success) { 
-        notifySuccess("Stock Added"); 
-        await fetchStocks(); // Refresh list
+        notifySuccess("Stock Added Successfully"); 
+        await fetchStocks(true); 
         return true; 
       }
     } catch (err) { 
-      notifyError("Add Failed"); 
+      notifyError("Add Stock Failed"); 
     } finally { 
       closeLoading(); 
     }
@@ -98,46 +134,64 @@ export default function StockProvider({ children }) {
   const updateStock = async (id, dto) => {
     notifyLoading();
     try {
-      // Create a clean DTO without the ID inside the body (if your API requires it)
       const { id: _, ...updateData } = dto; 
-      
       const { data } = await api.call(`vm2/stock/${id}`, { 
         method: "PUT", 
         headers: getHeaders(), 
         body: JSON.stringify(updateData) 
       });
       if (data.success) { 
-        notifySuccess("Stock Updated"); 
-        await fetchStocks(); 
+        notifySuccess("Stock Updated Successfully"); 
+        await fetchStocks(true); 
         return true; 
       }
     } catch (err) { 
-      notifyError("Update Failed"); 
+      notifyError("Update Stock Failed"); 
     } finally { 
       closeLoading(); 
     }
   };
 
   const deleteStock = async (id) => {
+    if(!window.confirm("Delete this stock ticker?")) return;
     notifyLoading();
     try {
-      await api.call(`vm2/stock/${id}`, { method: "DELETE", headers: getHeaders() });
-      notifySuccess("Stock Deleted");
-      fetchStocks();
-    } catch { notifyError("Delete Failed"); } finally { closeLoading(); }
+      const { data } = await api.call(`vm2/stock/${id}`, { method: "DELETE", headers: getHeaders() });
+      if (data.success) {
+        notifySuccess("Stock Deleted Successfully");
+        await fetchStocks(true);
+      }
+    } catch { 
+      notifyError("Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   const toggleStockActive = async (id, status) => {
+    notifyLoading();
     try {
-      await api.call(`vm2/stock/${id}/active?status=${status}`, { method: "PATCH", headers: getHeaders() });
-      fetchStocks();
-    } catch { notifyError("Toggle Failed"); }
+      const { data } = await api.call(`vm2/stock/${id}/active?status=${status}`, { method: "PATCH", headers: getHeaders() });
+      if (data.success) {
+        notifySuccess(`Stock ${status ? 'Enabled' : 'Disabled'}`);
+        await fetchStocks(true);
+      }
+    } catch { 
+      notifyError("Toggle Failed"); 
+    } finally {
+      closeLoading();
+    }
   };
 
   useEffect(() => {
-    if ([3, 91, 92].includes(page)) { fetchGroups(); fetchStocks(); }
-    else {setGroups([]); setStocks([])}
-  }, [page]);
+    if ([3, 91, 92].includes(page)) { 
+      fetchGroups(); 
+      fetchStocks(); 
+    } else {
+      setGroups([]); 
+      setStocks([]);
+    }
+  }, [page, fetchGroups, fetchStocks]);
 
   return (
     <StockContext.Provider value={{ 

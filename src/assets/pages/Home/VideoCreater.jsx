@@ -25,6 +25,14 @@ import PageContext from "../../contexts/VideoCreater/Page/PageContext";
 import StockGroupArea from "../../components/VideoCreaterComponents/StockComponents/StockGroupArea";
 import SingleStockArea from "../../components/VideoCreaterComponents/StockComponents/SingleStockArea";
 import MultiMediaArea from "../../components/VideoCreaterComponents/MultiMediaComponents/MultiMediaArea";
+import VideoSettingArea from "../../components/VideoCreaterComponents/VideoSettingComponents/VideoSettingArea";
+import IntroVideoArea from "../../components/VideoCreaterComponents/IntroVideoComponents/IntroVideoArea";
+import OutroVideoArea from "../../components/VideoCreaterComponents/OutroVideoComponents/OutroVideoArea";
+import ContentVideoArea from "../../components/VideoCreaterComponents/ContentVideoComponents/ContentVideoArea";
+import HeaderArea from "../../components/VideoCreaterComponents/HeaderComponents/HeaderArea";
+import StockRaceArea from "../../components/VideoCreaterComponents/StockRaceComponents/StockRaceArea";
+import NewsImageArea from "../../components/VideoCreaterComponents/NewsImageComponents/NewsImageArea";
+import NewsTextSoundArea from "../../components/VideoCreaterComponents/NewsTextSoundComponents/NewsTextSoundArea";
 export default function VideoCreater() {
   const { page, updatePage } = useContext(PageContext);
 
@@ -61,7 +69,7 @@ export default function VideoCreater() {
       icon: <MdOutlineVideoSettings className="text-4xl" />,
     },
     { id: 8, name: "Generators Urls", icon: <SiKaggle className="text-4xl" /> },
-    { id: 9, name: "Stock Group", icon: <RiStockFill className="text-4xl" /> }
+    { id: 9, name: "Stock Group", icon: <RiStockFill className="text-4xl" /> },
   ];
 
   const navProperties = {
@@ -92,6 +100,22 @@ export default function VideoCreater() {
         return <GeneratorsArea onBack={() => updatePage(null)} />;
       case 9:
         return <StockArea onBack={() => updatePage(null)} />;
+      case 71:
+        return <VideoSettingArea onBack={() => updatePage(7)} />;
+      case 72:
+        return <IntroVideoArea onBack={() => updatePage(7)} />;
+      case 73:
+        return <OutroVideoArea onBack={() => updatePage(7)} />;
+      case 74:
+        return <ContentVideoArea onBack={() => updatePage(7)} />;
+      case 75:
+        return <HeaderArea onBack={() => updatePage(7)} />;
+      case 76:
+        return <StockRaceArea onBack={() => updatePage(7)} />;
+      case 77:
+        return <NewsImageArea onBack={() => updatePage(7)} />;
+      case 78:
+        return <NewsTextSoundArea onBack={() => updatePage(7)} />;
       case 91:
         return <StockGroupArea onBack={() => updatePage(9)} />;
       case 92:

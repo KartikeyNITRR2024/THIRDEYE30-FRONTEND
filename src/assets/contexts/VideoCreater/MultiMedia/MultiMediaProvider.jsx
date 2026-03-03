@@ -14,69 +14,113 @@ export default function MultiMediaProvider({ children }) {
   const [todayMedia, setTodayMedia] = useState([]);
   const api = new ApiCaller();
 
-  const getHeaders = () => ({ token: userDetails.token });
+  const getHeaders = () => ({ 
+    token: userDetails.token 
+  });
 
-  // GET: /vm2/multimedia (All)
+  // GET: All Multimedia
   const fetchMedia = useCallback(async (silent = false) => {
     if (!userDetails?.token) return;
     if (!silent) notifyLoading();
     try {
-      const { data } = await api.call("vm2/multimedia", { method: "GET", headers: getHeaders() });
-      if (data.success) setMediaList(data.response || []);
-    } catch { if (!silent) notifyError("Fetch All Failed"); }
-    finally { if (!silent) closeLoading(); }
+      const { data } = await api.call("vm2/multimedia", { 
+        method: "GET", 
+        headers: getHeaders() 
+      });
+      if (data.success) {
+        setMediaList(data.response || []);
+      }
+    } catch { 
+      if (!silent) notifyError("Fetch Media List Failed"); 
+    } finally { 
+      if (!silent) closeLoading(); 
+    }
   }, [userDetails?.token]);
 
-  // GET: /vm2/multimedia/today
-  const fetchTodayMedia = useCallback(async () => {
+  // GET: Today's Multimedia
+  const fetchTodayMedia = useCallback(async (silent = true) => {
+    if (!userDetails?.token) return;
+    if (!silent) notifyLoading();
     try {
-      const { data } = await api.call("vm2/multimedia/today", { method: "GET", headers: getHeaders() });
-      if (data.success) setTodayMedia(data.response || []);
-    } catch { console.error("Today's fetch failed"); }
+      const { data } = await api.call("vm2/multimedia/today", { 
+        method: "GET", 
+        headers: getHeaders() 
+      });
+      if (data.success) {
+        setTodayMedia(data.response || []);
+      }
+    } catch { 
+      if (!silent) notifyError("Fetch Today's Media Failed");
+    } finally {
+      if (!silent) closeLoading();
+    }
   }, [userDetails?.token]);
 
-  // POST: /vm2/multimedia/upload
+  // POST: Upload Media
   const uploadMedia = async (formData) => {
     notifyLoading();
     try {
       const { data } = await api.call("vm2/multimedia/upload", { 
         method: "POST", 
-        headers: { token: userDetails.token }, 
+        headers: { token: userDetails.token }, // Note: No 'Content-Type' for FormData
         body: formData 
       });
       if (data.success) { 
-        notifySuccess("Upload Successful"); 
-        fetchMedia(true); 
-        fetchTodayMedia();
+        notifySuccess("Media Uploaded Successfully"); 
+        await fetchMedia(true); 
+        await fetchTodayMedia(true);
         return true;
       }
-    } catch { notifyError("Upload Failed"); } 
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Upload Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
-  // GET: /vm2/multimedia/info/{key}
+  // GET: Media Info by Key
   const getMediaInfo = async (key) => {
+    if (!key) return null;
+    notifyLoading(); // Info fetch usually needs feedback if triggered by a button
     try {
-      const { data } = await api.call(`vm2/multimedia/info/${key}`, { method: "GET", headers: getHeaders() });
-      return data.success ? data.response : null;
-    } catch { notifyError("Failed to get info"); }
+      const { data } = await api.call(`vm2/multimedia/info/${key}`, { 
+        method: "GET", 
+        headers: getHeaders() 
+      });
+      if (data.success) {
+        return data.response;
+      }
+    } catch { 
+      notifyError("Failed to Retrieve Media Info"); 
+    } finally {
+        closeLoading();
+    }
+    return null;
   };
 
-  // DELETE: /vm2/multimedia/{id}
+  // DELETE: Remove Asset
   const deleteMedia = async (id) => {
     if(!window.confirm("Delete this multimedia asset?")) return;
     notifyLoading();
     try {
-      await api.call(`vm2/multimedia/${id}`, { method: "DELETE", headers: getHeaders() });
-      notifySuccess("Deleted Successfully");
-      fetchMedia(true);
-      fetchTodayMedia();
-    } catch { notifyError("Delete Failed"); } 
-    finally { closeLoading(); }
+      const { data } = await api.call(`vm2/multimedia/${id}`, { 
+        method: "DELETE", 
+        headers: getHeaders() 
+      });
+      if (data.success) {
+        notifySuccess("Asset Deleted Successfully");
+        await fetchMedia(true);
+        await fetchTodayMedia(true);
+      }
+    } catch { 
+      notifyError("Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   useEffect(() => {
-    if ([1].includes(page)) { // Assuming 93 is the MultiMedia page
+    if ([1].includes(page)) { 
       fetchMedia();
       fetchTodayMedia();
     } else {

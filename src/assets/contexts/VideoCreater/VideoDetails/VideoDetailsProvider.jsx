@@ -12,92 +12,115 @@ export default function VideoDetailsProvider({ children }) {
   const [detailsList, setDetailsList] = useState([]);
   const api = new ApiCaller();
 
+  // Standardized header helper
+  const getHeaders = () => ({
+    "Content-Type": "application/json",
+    token: userDetails.token,
+  });
+
+  // FETCH ALL
   const fetchAllDetails = useCallback(async (silent = false) => {
     if (!userDetails?.token) return;
     if (!silent) notifyLoading();
     try {
       const { data } = await api.call("vm2/video-details", {
         method: "GET",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
       });
       if (data.success) {
         setDetailsList(data.response || []);
       }
     } catch {
-      if (!silent) notifyError("Failed to fetch details");
+      if (!silent) notifyError("Failed to Fetch Video Details");
     } finally {
       if (!silent) closeLoading();
     }
   }, [userDetails?.token]);
 
+  // CREATE
   const createDetails = async (dto) => {
     if (!userDetails?.token) return;
     notifyLoading();
     try {
       const { data } = await api.call("vm2/video-details", {
         method: "POST",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
         body: JSON.stringify(dto),
       });
       if (data.success) {
-        notifySuccess("Details Saved");
+        notifySuccess("Video Details Saved Successfully");
         await fetchAllDetails(true);
+        return true;
       }
     } catch {
-      notifyError("Save failed");
+      notifyError("Failed to Save Video Details");
     } finally {
       closeLoading();
     }
   };
 
+  // UPDATE
   const updateDetails = async (id, dto) => {
     if (!userDetails?.token) return;
     notifyLoading();
     try {
       const { data } = await api.call(`vm2/video-details/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
         body: JSON.stringify(dto),
       });
       if (data.success) {
-        notifySuccess("Updated Successfully");
+        notifySuccess("Video Details Updated Successfully");
         await fetchAllDetails(true);
         return true;
       }
     } catch {
-      notifyError("Update failed");
+      notifyError("Update Failed");
       return false;
     } finally {
       closeLoading();
     }
   };
 
+  // DELETE
   const deleteDetails = async (id) => {
     if (!userDetails?.token) return;
+    if (!window.confirm("Are you sure you want to delete these video details?")) return;
+
     notifyLoading();
     try {
       const { data } = await api.call(`vm2/video-details/${id}`, {
         method: "DELETE",
-        headers: { "Content-Type": "application/json", token: userDetails.token },
+        headers: getHeaders(),
       });
       if (data.success) {
         setDetailsList(prev => prev.filter(d => d.id !== id));
-        notifySuccess("Deleted");
+        notifySuccess("Video Details Deleted Successfully");
       }
     } catch {
-      notifyError("Delete failed");
+      notifyError("Delete Failed");
     } finally {
       closeLoading();
     }
   };
 
   useEffect(() => {
-    if (page === 5 || page == 6) fetchAllDetails();
-    else setDetailsList([]);
+    // Triggers for pages 5 and 6
+    if ([5, 6].includes(page)) {
+      fetchAllDetails();
+    } else {
+      setDetailsList([]);
+    }
   }, [page, fetchAllDetails]);
 
   return (
-    <VideoDetailsContext.Provider value={{ detailsList, fetchAllDetails, createDetails, updateDetails, deleteDetails }}>
+    <VideoDetailsContext.Provider value={{ 
+      detailsList, 
+      fetchAllDetails, 
+      createDetails, 
+      updateDetails, 
+      deleteDetails 
+    }}>
       {children}
     </VideoDetailsContext.Provider>
   );
