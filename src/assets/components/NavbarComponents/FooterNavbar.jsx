@@ -1,6 +1,7 @@
 import { RxDashboard } from "react-icons/rx";
 import { IoSettingsOutline } from "react-icons/io5";
 import { RiAdminLine } from "react-icons/ri";
+import { MdOutlineVideoCall } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import AuthContext from "../../contexts/Auth/AuthContext";
@@ -25,6 +26,11 @@ export default function FooterNavbar() {
     navigate("/admin");
   };
 
+  const handleVideoCreaterClick = () => {
+    handleBackClick();
+    navigate("/videocreater");
+  };
+
   return (
     <nav className="h-full">
       <ul className="flex justify-around items-center h-full">
@@ -40,6 +46,14 @@ export default function FooterNavbar() {
             className="text-4xl cursor-pointer"
           />
         </li>
+        {isAdmin && (
+          <li>
+            <MdOutlineVideoCall
+              onClick={handleVideoCreaterClick}
+              className="text-4xl cursor-pointer"
+            />
+          </li>
+        )}
         {isAdmin && (
           <li>
             <RiAdminLine

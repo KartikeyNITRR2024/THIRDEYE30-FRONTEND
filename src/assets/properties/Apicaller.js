@@ -1,6 +1,12 @@
 import Backend from "./Backend";
 
 export default class ApiCaller {
+
+  getBaseUrl() {
+    return Backend.THIRDEYEBACKEND.URL;
+  }
+
+
   async call(endpoint, options = {}) {
     const retries = Backend.RETRY.COUNT;
     const delay = Backend.RETRY.DELAY_MS;

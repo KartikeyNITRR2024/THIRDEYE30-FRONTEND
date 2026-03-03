@@ -31,6 +31,11 @@ export default function Navbar(props) {
     navigate("/marketthresold");
   };
 
+  const handleVideoCreaterClick = () => {
+    handleBackClick();
+    navigate("/videocreater");
+  };
+
   const isAdmin = userDetails.roles?.includes("ROLE_ADMIN");
 
   return (
@@ -57,6 +62,14 @@ export default function Navbar(props) {
                 >
                   Setting
                 </li>
+                {isAdmin && (
+                  <li
+                    onClick={handleVideoCreaterClick}
+                    className="cursor-pointer text-black hover:text-gray-800"
+                  >
+                    Video Creater
+                  </li>
+                )}
                 {isAdmin && (
                   <li
                     onClick={handleAdminClick}

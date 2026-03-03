@@ -7,7 +7,6 @@ import backgroundimage from "../../images/backgroundimage.png";
 import { PiComputerTowerBold } from "react-icons/pi";
 import { GrDocumentConfig, GrUserSettings } from "react-icons/gr";
 import { RiStockLine } from "react-icons/ri";
-
 import MicroservicesArea from "../../components/AdminComponents/MicroservicesComponents/MicroservicesArea";
 import ConfigurtionArea from "../../components/AdminComponents/ConfigurationComponents/ConfigurationArea";
 import UserArea from "../../components/AdminComponents/UsersComponents/UsersArea";
@@ -22,8 +21,8 @@ export default function Admin() {
     { id: 1, name: "Microservices", icon: <PiComputerTowerBold className="text-4xl" /> },
     { id: 2, name: "Configuration", icon: <GrDocumentConfig className="text-4xl" /> },
     { id: 3, name: "Users", icon: <GrUserSettings className="text-4xl" /> },
-    { id: 4, name: "Stocks", icon: <RiStockLine className="text-4xl" /> },
-  ];
+    { id: 4, name: "Stocks", icon: <RiStockLine className="text-4xl" /> }
+  ]
 
   const navProperties = {
     showOriginalNavbar: true,
