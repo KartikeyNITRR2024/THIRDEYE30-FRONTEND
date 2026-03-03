@@ -2,7 +2,8 @@ import { useContext, useState } from "react";
 import { 
   MdArrowBack, MdRefresh, MdEdit, MdDelete, MdClose, 
   MdNewspaper, MdAudiotrack, MdImage, MdColorLens, 
-  MdAutoDelete, MdLink 
+  MdAutoDelete, MdLink, MdAdd, MdLayers, MdContentCopy,
+  MdFingerprint, MdCheckCircle
 } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
 import NewsContext from "../../../contexts/VideoCreater/News/NewsContext";
@@ -14,6 +15,7 @@ export default function NewsArea({ onBack }) {
   const { detailsList } = useContext(VideoDetailsContext);
   const { notifySuccess } = useContext(NotificationContext);
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
   const initialForm = {
@@ -34,205 +36,229 @@ export default function NewsArea({ onBack }) {
   const resetForm = () => {
     setEditingId(null);
     setFormData(initialForm);
+    setIsModalOpen(false);
   };
 
   const handleAction = async () => {
     if (!formData.videoDetailsId || !formData.header) return;
     
-    // Normalize and clean data for backend
     const payload = {
       ...formData,
       header: formData.header.toUpperCase().trim(),
     };
 
-    if (editingId) {
-      const success = await updateNews(editingId, payload);
-      if (success) resetForm();
-    } else {
-      const success = await addNews(payload);
-      if (success) resetForm();
-    }
+    const success = editingId 
+      ? await updateNews(editingId, payload) 
+      : await addNews(payload);
+      
+    if (success) resetForm();
   };
 
   const startEdit = (news) => {
     setEditingId(news.id);
     setFormData({ ...news });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setIsModalOpen(true);
+  };
+
+  const copyToClipboard = (text, label) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    notifySuccess(`${label} Copied`);
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-4 md:p-6 shadow-md mt-6 border border-gray-100">
-        
-        {/* HEADER BAR */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b pb-4">
-          <button onClick={onBack} className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg hover:bg-gray-200 text-xs font-black transition active:scale-95">
-            <MdArrowBack size={16} /> BACK
+    <div className="relative min-h-screen bg-slate-50/50 p-3 md:p-6 font-sans">
+      
+      {/* HEADER BAR */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition text-slate-600">
+            <MdArrowBack size={20} />
           </button>
-          <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end">
-            <button onClick={() => fetchNews()} className="text-gray-400 hover:text-black transition p-2 bg-slate-50 rounded-full active:rotate-180 duration-500">
-              <MdRefresh size={22} />
-            </button>
-            <div className="text-right">
-              <h2 className="text-sm font-black text-gray-700 uppercase leading-none mb-1">News Desk</h2>
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Article & Media Assets</span>
-            </div>
+          <div>
+            <h2 className="text-sm font-black text-slate-700 uppercase leading-none mb-1">News Desk</h2>
+            <span className="text-[9px] text-sky-500 font-bold uppercase tracking-widest leading-none">Media Asset & Segment Composition</span>
           </div>
         </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button onClick={() => fetchNews()} className="flex-1 sm:flex-none bg-white p-2.5 rounded-lg text-slate-400 border border-slate-200 hover:text-slate-900 transition shadow-sm">
+            <MdRefresh size={20} />
+          </button>
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="flex-3 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-black text-[10px] font-black transition uppercase tracking-widest shadow-md active:scale-95"
+          >
+            <MdAdd size={18} /> Compose Segment
+          </button>
+        </div>
+      </div>
 
-        {/* COMPOSITION FORM */}
-        <div className={`mb-8 p-5 border-2 rounded-2xl transition-all shadow-sm ${editingId ? 'border-orange-200 bg-orange-50/10' : 'border-slate-100 bg-slate-50/50'}`}>
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-[10px] font-black text-gray-500 uppercase tracking-[2px] flex items-center gap-2">
-              <MdNewspaper size={16} className={editingId ? "text-orange-500" : "text-blue-500"} />
-              {editingId ? "Modify News Article" : "Compose New Segment"}
-            </h3>
-            {editingId && (
-              <button onClick={resetForm} className="bg-white border px-3 py-1 rounded-full text-rose-500 flex items-center gap-1 text-[9px] font-black hover:bg-rose-50 transition shadow-sm">
-                <MdClose /> DISCARD EDIT
-              </button>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* COLUMN 1: EDITORIAL CONTENT */}
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Parent Link</label>
-                <select className="w-full border-2 rounded-xl px-3 py-2.5 text-xs font-bold bg-white outline-none focus:border-blue-400" 
-                  value={formData.videoDetailsId} onChange={e => setFormData({...formData, videoDetailsId: e.target.value})}>
-                  <option value="">Select Project Detail...</option>
-                  {detailsList.map(d => <option key={d.id} value={d.id}>{d.introHeader?.toUpperCase() || `PROJECT ID: ${d.id.slice(0,8)}`}</option>)}
-                </select>
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Headline</label>
-                <input type="text" placeholder="CRITICAL MARKET SHIFT..." className="w-full border-2 rounded-xl px-3 py-2.5 text-xs font-black outline-none focus:border-blue-400 uppercase" 
-                  value={formData.header} onChange={e => setFormData({...formData, header: e.target.value})} />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Visual Text Overlay</label>
-                <textarea placeholder="Main scroll or body content..." className="w-full border-2 rounded-xl px-3 py-2 text-xs h-24 resize-none outline-none focus:border-blue-400" 
-                  value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
-              </div>
-            </div>
-
-            {/* COLUMN 2: AUDIO & STYLE */}
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-[9px] font-black text-gray-400 uppercase ml-1">Speech Synthesis Script</label>
-                <textarea placeholder="Paste the exact text for AI voice generation..." className="w-full border-2 rounded-xl px-3 py-2 text-[11px] h-24 bg-blue-50/20 font-medium outline-none focus:border-blue-400 italic" 
-                  value={formData.audioContent} onChange={e => setFormData({...formData, audioContent: e.target.value})} />
-              </div>
+      {/* ASSET REPOSITORY GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {newsList.map((n) => {
+          const detail = detailsList.find(d => d.id === n.videoDetailsId);
+          return (
+            <motion.div layout key={n.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all relative overflow-hidden group">
+              <div className="absolute top-0 left-0 w-1.5 h-full" style={{ backgroundColor: n.newsWarningColor }}></div>
               
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-white border-2 rounded-xl shadow-sm space-y-2">
-                  <label className="text-[8px] font-black uppercase text-gray-400 block text-center">Alert Color</label>
-                  <div className="flex items-center gap-2">
-                    <input type="color" className="h-8 w-10 cursor-pointer rounded bg-transparent p-0 border-0"
-                      value={formData.newsWarningColor} onChange={e => setFormData({...formData, newsWarningColor: e.target.value})} />
-                    <span className="text-[10px] font-mono font-bold text-gray-400 uppercase">{formData.newsWarningColor}</span>
+              <div className="flex justify-between items-start mb-4">
+                <div className="max-w-[160px]">
+                  <h4 className="font-black text-slate-800 uppercase text-xs mb-1 truncate">{n.header}</h4>
+                  <div className="flex gap-1">
+                    <span className="text-[8px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase truncate max-w-[100px]">
+                      {detail?.introHeader || "UNLINKED"}
+                    </span>
+                    {n.autoDelete && <span className="text-[8px] bg-rose-50 text-rose-500 px-2 py-0.5 rounded font-black uppercase">TEMP</span>}
                   </div>
                 </div>
+                <div className="flex gap-1">
+                  <button onClick={() => startEdit(n)} className="p-2 text-slate-300 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition"><MdEdit size={16} /></button>
+                  <button onClick={() => deleteNews(n.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition"><MdDelete size={16} /></button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 min-h-[44px]">
+                  <p className="text-[10px] font-medium text-slate-500 line-clamp-2 leading-tight">"{n.content}"</p>
+                </div>
+
+                <div className="flex items-center justify-between border-t pt-3">
+                   <div className="flex gap-3">
+                      <div className={`flex flex-col items-center gap-1 ${n.isImageMultiMediaKeyUploaded ? 'text-blue-500' : 'text-slate-200'}`}>
+                         <MdImage size={18} />
+                         <span className="text-[7px] font-black uppercase tracking-tighter">IMG</span>
+                      </div>
+                      <div className={`flex flex-col items-center gap-1 ${n.isAudioMultiMediaKeyUploaded ? 'text-purple-500' : 'text-slate-200'}`}>
+                         <MdAudiotrack size={18} />
+                         <span className="text-[7px] font-black uppercase tracking-tighter">AUD</span>
+                      </div>
+                   </div>
+                   <button 
+                    onClick={() => copyToClipboard(n.id, "News ID")}
+                    className="flex items-center gap-1 text-[8px] bg-slate-900 text-white px-2 py-1 rounded font-black uppercase tracking-tighter hover:bg-black transition"
+                   >
+                    <MdFingerprint size={10}/> {n.id.slice(0,8)}
+                   </button>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* COMPOSITION MODAL */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden">
+              <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-slate-800 text-white"><MdNewspaper size={20} /></div>
+                  <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest">
+                    {editingId ? "Modify News Article" : "Compose News Segment"}
+                  </h3>
+                </div>
+                <button onClick={resetForm} className="p-2 hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-full transition"><MdClose size={24} /></button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[75vh] grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
+                {/* LEFT: EDITORIAL */}
+                <div className="space-y-5">
+                   <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1 flex items-center gap-1"><MdLink/> Project Association</label>
+                      <select className="w-full border-2 rounded-xl px-4 py-2.5 text-xs font-bold bg-white focus:border-slate-800 outline-none transition" 
+                        value={formData.videoDetailsId} onChange={e => setFormData({...formData, videoDetailsId: e.target.value})}>
+                        <option value="">Select Target Details...</option>
+                        {detailsList.map(d => <option key={d.id} value={d.id}>{d.introHeader?.toUpperCase() || `ID: ${d.id.slice(0,8)}`}</option>)}
+                      </select>
+                   </div>
+
+                   <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1 flex items-center gap-1"><MdLayers/> Headline</label>
+                      <input type="text" placeholder="URGENT UPDATE..." className="w-full border-2 rounded-xl px-4 py-2.5 text-xs font-black outline-none focus:border-slate-800 transition uppercase" 
+                        value={formData.header} onChange={e => setFormData({...formData, header: e.target.value})} />
+                   </div>
+
+                   <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1 flex items-center gap-1">Ticker / Scroll Text</label>
+                      <textarea placeholder="The primary text displayed on screen..." className="w-full border-2 rounded-xl px-4 py-3 text-xs font-bold h-24 resize-none outline-none focus:border-slate-800 transition bg-slate-50/30" 
+                        value={formData.content} onChange={e => setFormData({...formData, content: e.target.value})} />
+                   </div>
+
+                   <div className="space-y-1">
+                      <label className="text-[9px] font-black text-indigo-400 uppercase ml-1 flex items-center gap-1"><MdAudiotrack/> Speech Synthesis Script</label>
+                      <textarea placeholder="Text to be converted into AI Voice..." className="w-full border-2 border-indigo-50 rounded-xl px-4 py-3 text-xs font-medium h-24 resize-none outline-none focus:border-indigo-400 transition bg-indigo-50/20 italic" 
+                        value={formData.audioContent} onChange={e => setFormData({...formData, audioContent: e.target.value})} />
+                   </div>
+                </div>
+
+                {/* RIGHT: MEDIA & STYLE */}
+                <div className="space-y-6">
+                   <div className="p-5 bg-slate-900 rounded-2xl text-white space-y-5">
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-800 pb-2">Multimedia Sync</p>
+                      
+                      {/* IMAGE UUID */}
+                      <div className="space-y-2">
+                         <div className="flex justify-between items-center">
+                            <span className="text-[8px] font-black uppercase text-sky-400 flex items-center gap-1"><MdImage/> Image Link</span>
+                            <input type="checkbox" className="accent-sky-400" checked={formData.isImageMultiMediaKeyUploaded} onChange={e => setFormData({...formData, isImageMultiMediaKeyUploaded: e.target.checked})} />
+                         </div>
+                         <div className="relative">
+                            <input type="text" placeholder="UUID..." disabled={!formData.isImageMultiMediaKeyUploaded} className="w-full bg-slate-800 border-none rounded-lg pl-3 pr-10 py-2 text-[10px] font-mono text-sky-300 disabled:opacity-20 transition"
+                              value={formData.imageMultiMediaKey} onChange={e => setFormData({...formData, imageMultiMediaKey: e.target.value})} />
+                            <button onClick={() => copyToClipboard(formData.imageMultiMediaKey, "Image Key")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"><MdContentCopy size={14}/></button>
+                         </div>
+                      </div>
+
+                      {/* AUDIO UUID */}
+                      <div className="space-y-2">
+                         <div className="flex justify-between items-center">
+                            <span className="text-[8px] font-black uppercase text-purple-400 flex items-center gap-1"><MdAudiotrack/> Audio Link</span>
+                            <input type="checkbox" className="accent-purple-400" checked={formData.isAudioMultiMediaKeyUploaded} onChange={e => setFormData({...formData, isAudioMultiMediaKeyUploaded: e.target.checked})} />
+                         </div>
+                         <div className="relative">
+                            <input type="text" placeholder="UUID..." disabled={!formData.isAudioMultiMediaKeyUploaded} className="w-full bg-slate-800 border-none rounded-lg pl-3 pr-10 py-2 text-[10px] font-mono text-purple-300 disabled:opacity-20 transition"
+                              value={formData.audioMultiMediaKey} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
+                            <button onClick={() => copyToClipboard(formData.audioMultiMediaKey, "Audio Key")} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition"><MdContentCopy size={14}/></button>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 bg-white border-2 rounded-2xl flex flex-col items-center gap-2">
+                         <span className="text-[8px] font-black uppercase text-slate-400">Alert Color</span>
+                         <input type="color" className="h-10 w-full cursor-pointer rounded-lg bg-transparent p-0 border-0"
+                            value={formData.newsWarningColor} onChange={e => setFormData({...formData, newsWarningColor: e.target.value})} />
+                         <span className="text-[9px] font-mono font-bold text-slate-700">{formData.newsWarningColor.toUpperCase()}</span>
+                      </div>
+                      
+                      <button 
+                        onClick={() => setFormData({...formData, autoDelete: !formData.autoDelete})}
+                        className={`flex flex-col items-center justify-center p-4 border-2 rounded-2xl transition-all ${formData.autoDelete ? 'bg-rose-50 border-rose-200 text-rose-500' : 'bg-slate-50 border-slate-100 text-slate-300'}`}
+                      >
+                         <MdAutoDelete size={24} />
+                         <span className="text-[8px] font-black uppercase mt-1">Auto-Purge</span>
+                      </button>
+                   </div>
+                </div>
+              </div>
+
+              <div className="p-6 bg-white border-t flex gap-3">
+                <button onClick={resetForm} className="flex-1 py-4 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:bg-slate-50 transition tracking-[2px]">Discard</button>
                 <button 
-                  onClick={() => setFormData({...formData, autoDelete: !formData.autoDelete})}
-                  className={`flex flex-col items-center justify-center p-3 border-2 rounded-xl transition-all ${formData.autoDelete ? 'bg-rose-50 border-rose-200 text-rose-500' : 'bg-white border-slate-200 text-slate-300'}`}
+                  onClick={handleAction} 
+                  disabled={!formData.videoDetailsId || !formData.header}
+                  className={`flex-[2] py-4 rounded-xl text-[10px] font-black uppercase tracking-[2px] shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 ${editingId ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-slate-900 text-white hover:bg-black'} disabled:bg-slate-100 disabled:text-slate-300`}
                 >
-                  <MdAutoDelete size={20} />
-                  <span className="text-[8px] font-black uppercase mt-1">Auto-Purge</span>
+                    <MdCheckCircle size={18}/> {editingId ? "Commit Changes" : "Deploy News Asset"}
                 </button>
               </div>
-            </div>
-
-            {/* COLUMN 3: MULTIMEDIA SYNC */}
-            <div className="flex flex-col gap-4">
-              <div className="p-4 border-2 rounded-2xl bg-white space-y-4 shadow-sm">
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center">
-                    <label className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-                      <MdImage className="text-blue-400"/> Image Reference
-                    </label>
-                    <input type="checkbox" className="accent-blue-500 w-4 h-4" checked={formData.isImageMultiMediaKeyUploaded} onChange={e => setFormData({...formData, isImageMultiMediaKeyUploaded: e.target.checked})} />
-                  </div>
-                  <input type="text" placeholder="Multimedia UUID" className={`w-full border rounded-lg px-2 py-2 text-[10px] font-mono transition-opacity ${!formData.isImageMultiMediaKeyUploaded && 'opacity-30'}`} 
-                    value={formData.imageMultiMediaKey || ""} onChange={e => setFormData({...formData, imageMultiMediaKey: e.target.value})} />
-                </div>
-
-                <div className="space-y-2 border-t pt-3">
-                  <div className="flex justify-between items-center">
-                    <label className="flex items-center gap-2 text-[9px] font-black uppercase text-gray-400">
-                      <MdAudiotrack className="text-purple-400"/> Custom Audio
-                    </label>
-                    <input type="checkbox" className="accent-purple-500 w-4 h-4" checked={formData.isAudioMultiMediaKeyUploaded} onChange={e => setFormData({...formData, isAudioMultiMediaKeyUploaded: e.target.checked})} />
-                  </div>
-                  <input type="text" placeholder="Multimedia UUID" className={`w-full border rounded-lg px-2 py-2 text-[10px] font-mono transition-opacity ${!formData.isAudioMultiMediaKeyUploaded && 'opacity-30'}`} 
-                    value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
-                </div>
-              </div>
-
-              <button onClick={handleAction} className={`w-full py-4 rounded-xl text-[11px] font-black uppercase tracking-[2px] transition-all shadow-lg active:scale-95
-                ${editingId ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-black text-white hover:bg-gray-800'}`}>
-                {editingId ? "Commit Changes" : "Deploy News Asset"}
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-
-        {/* REPOSITORY TABLE */}
-        <div className="overflow-x-auto rounded-xl border border-gray-100 shadow-sm">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="bg-slate-50 text-gray-400 font-black text-[10px] uppercase tracking-widest border-b">
-                <th className="px-4 py-4 text-left">Article Intel</th>
-                <th className="px-4 py-4 text-center">Project Link</th>
-                <th className="px-4 py-4 text-center">Media Mix</th>
-                <th className="px-4 py-4 text-center">Styling</th>
-                <th className="px-4 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {newsList.map((n) => (
-                <tr key={n.id} className={`transition-colors border-b border-gray-50 last:border-0 ${editingId === n.id ? 'bg-orange-50/40' : 'hover:bg-slate-50/50'}`}>
-                  <td className="px-4 py-4 text-left">
-                    <div className="flex flex-col">
-                      <span className="font-black text-gray-800 uppercase text-xs leading-none mb-1">{n.header}</span>
-                      <span className="text-[10px] text-gray-400 font-medium truncate max-w-[250px]">{n.content}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-center">
-                    <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded-full uppercase">
-                      {detailsList.find(d => d.id === n.videoDetailsId)?.introHeader?.slice(0,12) || 'Det: ' + n.videoDetailsId.slice(0,6)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex justify-center gap-3">
-                      <div className={`p-1.5 rounded ${n.isImageMultiMediaKeyUploaded ? 'bg-blue-100 text-blue-600' : 'bg-gray-50 text-gray-200'}`}>
-                        <MdImage size={16} />
-                      </div>
-                      <div className={`p-1.5 rounded ${n.isAudioMultiMediaKeyUploaded ? 'bg-purple-100 text-purple-600' : 'bg-gray-50 text-gray-200'}`}>
-                        <MdAudiotrack size={16} />
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-4">
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="w-5 h-5 rounded-full border-2 border-white shadow-sm ring-1 ring-gray-100" style={{backgroundColor: n.newsWarningColor}}></div>
-                      {n.autoDelete && <span className="text-[7px] font-black text-rose-500 uppercase tracking-tighter">TEMP</span>}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 text-right">
-                    <div className="flex justify-end items-center gap-1">
-                      <button onClick={() => startEdit(n)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"><MdEdit size={18} /></button>
-                      <button onClick={() => deleteNews(n.id)} className="p-2 text-gray-300 hover:text-rose-500 transition-colors"><MdDelete size={18} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

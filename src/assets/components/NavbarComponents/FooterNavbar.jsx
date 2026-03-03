@@ -1,18 +1,20 @@
 import { RxDashboard } from "react-icons/rx";
 import { IoSettingsOutline } from "react-icons/io5";
 import { RiAdminLine } from "react-icons/ri";
-import { MdOutlineVideoCall } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
+import { MdOutlineVideoLibrary } from "react-icons/md";
 import AuthContext from "../../contexts/Auth/AuthContext";
-import PageContext from "../../contexts/Admin/Page/PageContext";
+import AdminPageContext from "../../contexts/Admin/Page/PageContext";
+import VideoPageContext from "../../contexts/VideoCreater/Page/PageContext";
 import MarketThresoldContext from "../../contexts/MarketThresold/MarketThresold/MarketThresoldContext";
 
 export default function FooterNavbar() {
   const navigate = useNavigate();
   const { userDetails } = useContext(AuthContext);
-  const { resetPage } = useContext(PageContext);
   const { handleBackClick } = useContext(MarketThresoldContext);
+  const { resetPage: resetAdminPage } = useContext(AdminPageContext);
+  const { resetPage: resetVideoPage } = useContext(VideoPageContext);
 
   const isAdmin = userDetails.roles?.includes("ROLE_ADMIN");
 
@@ -22,12 +24,12 @@ export default function FooterNavbar() {
   };
 
   const handleAdminClick = () => {
-    resetPage();
+    resetAdminPage();
     navigate("/admin");
   };
 
   const handleVideoCreaterClick = () => {
-    handleBackClick();
+    resetVideoPage();
     navigate("/videocreater");
   };
 
@@ -48,7 +50,7 @@ export default function FooterNavbar() {
         </li>
         {isAdmin && (
           <li>
-            <MdOutlineVideoCall
+            <MdOutlineVideoLibrary
               onClick={handleVideoCreaterClick}
               className="text-4xl cursor-pointer"
             />

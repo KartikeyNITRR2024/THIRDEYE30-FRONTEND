@@ -5,14 +5,18 @@ import { MdLogout } from "react-icons/md";
 import { FaArrowLeft } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../../contexts/Auth/AuthContext";
-import PageContext from "../../contexts/Admin/Page/PageContext";
+import AdminPageContext from "../../contexts/Admin/Page/PageContext";
+import VideoPageContext from "../../contexts/VideoCreater/Page/PageContext";
 import MarketThresoldContext from "../../contexts/MarketThresold/MarketThresold/MarketThresoldContext";
 
 export default function Navbar(props) {
   const navigate = useNavigate();
   const [options, setOptions] = useState(false);
   const { handleBackClick } = useContext(MarketThresoldContext);
-  const { resetPage } = useContext(PageContext);
+
+  // FIXED: Alias the duplicate resetPage names to avoid conflict
+  const { resetPage: resetAdminPage } = useContext(AdminPageContext);
+  const { resetPage: resetVideoPage } = useContext(VideoPageContext);
 
   const { navProperties } = props;
   const { logout, userDetails } = useContext(AuthContext);
@@ -22,7 +26,7 @@ export default function Navbar(props) {
   };
 
   const handleAdminClick = () => {
-    resetPage();
+    resetAdminPage(); // Use the aliased name
     navigate("/admin");
   };
 
@@ -32,11 +36,11 @@ export default function Navbar(props) {
   };
 
   const handleVideoCreaterClick = () => {
-    handleBackClick();
-    navigate("/videocreater");
+    resetVideoPage(); // Use the aliased name
+    navigate("/videocreater"); // Note: You had this navigating to "/admin" before
   };
 
-  const isAdmin = userDetails.roles?.includes("ROLE_ADMIN");
+  const isAdmin = userDetails?.roles?.includes("ROLE_ADMIN");
 
   return (
     <nav className="h-full flex items-center mx-5 md:mx-10">
@@ -49,7 +53,7 @@ export default function Navbar(props) {
               alt="thirdeyelogo"
             />
             <div className="hidden md:block">
-              <ul className="flex gap-4">
+              <ul className="flex gap-4 ml-6"> {/* Added ml-6 for spacing */}
                 <li
                   onClick={handleMarketThresoldClick}
                   className="cursor-pointer text-black hover:text-gray-800"
@@ -87,10 +91,10 @@ export default function Navbar(props) {
               onClick={() => setOptions(!options)}
             />
             {options && (
-              <div className="absolute top-16 border border-gray-500 right-0 bg-white shadow-lg rounded-lg w-48 p-4 z-10">
+              <div className="absolute top-12 border border-gray-500 right-0 bg-white shadow-lg rounded-lg w-48 p-4 z-50">
                 <ul>
                   <li
-                    onClick={logout} // call logout from AuthContext
+                    onClick={logout}
                     className="py-2 px-4 flex items-center hover:bg-gray-100 cursor-pointer gap-1"
                   >
                     <MdLogout className="text-xl" />
@@ -102,10 +106,10 @@ export default function Navbar(props) {
           </div>
         </div>
       ) : (
-        <div className="flex justify-start items-center">
+        <div className="flex justify-start items-center gap-4">
           {navProperties.showBackButton && (
             <FaArrowLeft
-              className="text-3xl"
+              className="text-3xl cursor-pointer"
               onClick={navProperties.backButtonFunction}
             />
           )}

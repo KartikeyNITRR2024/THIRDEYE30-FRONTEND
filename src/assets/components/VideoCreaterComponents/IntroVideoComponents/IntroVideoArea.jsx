@@ -2,324 +2,313 @@ import { useContext, useState } from "react";
 import { 
   MdArrowBack, MdRefresh, MdEdit, MdDelete, MdCheckCircle, 
   MdRadioButtonUnchecked, MdClose, MdFormatColorFill, 
-  MdTextFields, MdImage, MdMusicNote, MdSettings, MdHorizontalRule 
+  MdTextFields, MdImage, MdMusicNote, MdSettings, MdAdd,
+  MdLayers, MdPalette, MdOutlineTextFields, MdStraighten
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import IntroVideoContext from "../../../contexts/VideoCreater/IntroVideo/IntroVideoContext";
 
 export default function IntroVideoArea({ onBack }) {
   const { intros, createIntro, updateIntro, deleteIntro, activateIntro, fetchIntros } = useContext(IntroVideoContext);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // 1. Initial State with null for all numeric columns
-  const initialForm = {
-    name: "", 
-    description: "", 
+  // 1. Initial State - Everything strictly null/false for Java DTO compatibility
+  const emptyForm = {
+    name: null, 
+    description: null, 
     active: false,
     isBackgroundImage: false, 
-    backgroundImage: "", 
-    backgroundColor: "#000000", 
-    backgroundOpacity: null, // float
-    isHeaderPresent: true, 
-    headerFontType: "BOLD", 
-    headerFontName: "Arial", 
-    headerSize: null, // int
-    headerColor: "#FFFFFF",
+    backgroundImage: null, 
+    backgroundColor: null, 
+    backgroundOpacity: null, 
+    isHeaderPresent: false, 
+    headerFontType: null, 
+    headerFontName: null, 
+    headerSize: null, 
+    headerColor: null,
     isSubHeaderPresent: false, 
-    subHeaderFontType: "NORMAL", 
-    subHeaderFontName: "Arial", 
-    subHeaderSize: null, // int
-    subHeaderColor: "#CCCCCC",
+    subHeaderFontType: null, 
+    subHeaderFontName: null, 
+    subHeaderSize: null, 
+    subHeaderColor: null,
     isLinePresent: false, 
-    lineColor: "#FF0000", 
-    lineWidth: null, // int
-    adImageHeight: null, // int
-    adImageWidth: null, // int
+    lineColor: null, 
+    lineWidth: null, 
+    adImageHeight: null, 
+    adImageWidth: null, 
     isAudio: false, 
-    audioMultiMediaKey: "", 
-    audioVolumne: null // int
+    audioMultiMediaKey: null, 
+    audioVolumne: null 
   };
 
-  const [formData, setFormData] = useState(initialForm);
+  const [formData, setFormData] = useState(emptyForm);
 
-  const reset = () => { 
+  const resetForm = () => { 
     setEditingId(null); 
-    setFormData(initialForm); 
+    setFormData(emptyForm); 
+    setIsModalOpen(false);
   };
 
-  const handleEdit = (intro) => {
+  const startEdit = (intro) => {
     setEditingId(intro.id);
-    setFormData({ ...initialForm, ...intro });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setFormData({ ...emptyForm, ...intro });
+    setIsModalOpen(true);
   };
 
   const handleSubmit = async () => {
     if (!formData.name) return;
 
-    // 2. Strict Type Casting for Java/SQL Compatibility
+    // Casting logic for the payload
     const payload = {
       ...formData,
-      backgroundOpacity: parseFloat(formData.backgroundOpacity ?? 1.0),
-      headerSize: parseInt(formData.headerSize ?? 60),
-      subHeaderSize: parseInt(formData.subHeaderSize ?? 40),
-      lineWidth: parseInt(formData.lineWidth ?? 5),
-      adImageWidth: parseInt(formData.adImageWidth ?? 200),
-      adImageHeight: parseInt(formData.adImageHeight ?? 200),
-      audioVolumne: parseInt(formData.audioVolumne ?? 100)
+      backgroundOpacity: formData.backgroundOpacity ? parseFloat(formData.backgroundOpacity) : 0,
+      headerSize: formData.headerSize ? parseInt(formData.headerSize) : 0,
+      subHeaderSize: formData.subHeaderSize ? parseInt(formData.subHeaderSize) : 0,
+      lineWidth: formData.lineWidth ? parseInt(formData.lineWidth) : 0,
+      adImageWidth: formData.adImageWidth ? parseInt(formData.adImageWidth) : 0,
+      adImageHeight: formData.adImageHeight ? parseInt(formData.adImageHeight) : 0,
+      audioVolumne: formData.audioVolumne ? parseInt(formData.audioVolumne) : 0
     };
 
     const success = editingId ? await updateIntro(editingId, payload) : await createIntro(payload);
-    if (success) reset();
+    if (success) resetForm();
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-3 md:p-6 shadow-md mt-4 md:mt-6 border border-gray-100">
+    <div className="relative min-h-screen bg-slate-50/50 p-3 md:p-6 font-sans text-slate-900">
       
-      {/* HEADER SECTION */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 border-b pb-4">
-        <button onClick={onBack} className="bg-gray-100 px-4 py-2 rounded-lg text-xs font-black flex items-center gap-2 hover:bg-gray-200 transition w-full sm:w-auto justify-center">
-          <MdArrowBack/> BACK
-        </button>
-        <div className="flex items-center justify-between w-full sm:w-auto gap-4">
-            <button onClick={() => fetchIntros()} className="text-gray-400 hover:text-black transition p-2 bg-slate-50 rounded-full active:rotate-180 duration-500"><MdRefresh size={20}/></button>
-            <div className="text-right">
-                <h2 className="text-xs md:text-sm font-black text-gray-700 uppercase tracking-tight leading-none">Intro Designer</h2>
-                <span className="text-[9px] md:text-[10px] text-gray-400 font-bold uppercase tracking-widest">Visual Template Manager</span>
-            </div>
-        </div>
-      </div>
-
-      {/* COMPREHENSIVE FORM PANEL */}
-      <div className={`mb-8 p-4 md:p-6 rounded-2xl border-2 transition-all ${editingId ? 'border-blue-200 bg-blue-50/10' : 'bg-slate-50/50 border-slate-100'}`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          
-          {/* COLUMN 1: IDENTITY */}
-          <div className="space-y-3 sm:col-span-2 lg:col-span-1">
-            <h3 className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2 tracking-widest"><MdSettings size={16}/> Basic Identity</h3>
-            <div className="space-y-2">
-                <input type="text" placeholder="Template Name" className="w-full border-2 rounded-lg px-3 py-2.5 text-xs font-bold outline-none focus:border-blue-400 transition" 
-                  value={formData.name || ""} onChange={e => setFormData({...formData, name: e.target.value})} />
-                <textarea placeholder="Template Description" className="w-full border-2 rounded-lg px-3 py-2 text-[11px] h-20 outline-none focus:border-blue-400 transition resize-none" 
-                  value={formData.description || ""} onChange={e => setFormData({...formData, description: e.target.value})} />
-            </div>
-          </div>
-
-          {/* COLUMN 2: CANVAS/BACKGROUND */}
-          <div className="space-y-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2 tracking-widest"><MdFormatColorFill size={16}/> Canvas</h3>
-            <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
-              <span className="text-[9px] font-black text-gray-500 uppercase">Image Background</span>
-              <input type="checkbox" className="w-4 h-4 cursor-pointer accent-blue-600" checked={!!formData.isBackgroundImage} onChange={e => setFormData({...formData, isBackgroundImage: e.target.checked})} />
-            </div>
-            
-            <AnimatePresence mode="wait">
-                {formData.isBackgroundImage ? (
-                  <motion.div key="img" initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="space-y-1">
-                    <label className="text-[8px] font-bold text-gray-400 uppercase ml-1">Multimedia UUID</label>
-                    <input type="text" placeholder="Enter key..." className="w-full border rounded-lg px-2 py-2 text-[10px] font-mono bg-blue-50/30" 
-                        value={formData.backgroundImage || ""} onChange={e => setFormData({...formData, backgroundImage: e.target.value})} />
-                  </motion.div>
-                ) : (
-                  <motion.div key="color" initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="space-y-3">
-                    <div className="flex gap-3 items-center">
-                        <input type="color" className="w-12 h-10 cursor-pointer rounded-lg border-0 p-0 overflow-hidden shadow-sm" 
-                          value={formData.backgroundColor || "#000000"} onChange={e => setFormData({...formData, backgroundColor: e.target.value})} />
-                        <span className="text-[10px] font-mono text-gray-400 uppercase font-bold">{formData.backgroundColor}</span>
-                    </div>
-                    <div className="space-y-1">
-                        <div className="flex justify-between text-[9px] font-black text-gray-400">
-                            <span>OPACITY</span>
-                            <span className="text-blue-600">{Math.round((formData.backgroundOpacity ?? 1) * 100)}%</span>
-                        </div>
-                        <input type="range" min="0" max="1" step="0.1" className="w-full h-1.5 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-blue-600" 
-                          value={formData.backgroundOpacity ?? 1} onChange={e => setFormData({...formData, backgroundOpacity: parseFloat(e.target.value)})} />
-                    </div>
-                  </motion.div>
-                )}
-            </AnimatePresence>
-          </div>
-
-          {/* COLUMN 3: TYPOGRAPHY (MAIN) */}
-          <div className="space-y-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                <h3 className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2"><MdTextFields size={16}/> Header</h3>
-                <input type="checkbox" className="w-4 h-4 accent-blue-600" checked={!!formData.isHeaderPresent} onChange={e => setFormData({...formData, isHeaderPresent: e.target.checked})} />
-            </div>
-            <div className={`space-y-2.5 transition-opacity ${!formData.isHeaderPresent ? 'opacity-20 pointer-events-none' : ''}`}>
-                <input type="text" placeholder="Font (e.g. Montserrat)" className="w-full border rounded px-2 py-2 text-[10px] font-bold" 
-                  value={formData.headerFontName || ""} onChange={e => setFormData({...formData, headerFontName: e.target.value})} />
-                <div className="flex gap-2">
-                    <input type="color" className="w-10 h-9 rounded shadow-inner cursor-pointer" value={formData.headerColor || "#FFFFFF"} onChange={e => setFormData({...formData, headerColor: e.target.value})} />
-                    <input type="number" placeholder="Size (px)" className="w-full border rounded px-2 text-xs font-bold" 
-                      value={formData.headerSize ?? ""} onChange={e => setFormData({...formData, headerSize: e.target.value})} />
-                </div>
-                <select className="w-full border rounded text-[10px] p-2 font-black bg-slate-50 uppercase" value={formData.headerFontType || "NORMAL"} onChange={e => setFormData({...formData, headerFontType: e.target.value})}>
-                    <option value="NORMAL">Normal Weight</option>
-                    <option value="BOLD">Bold Weight</option>
-                    <option value="ITALIC">Italicized</option>
-                </select>
-            </div>
-          </div>
-
-          {/* COLUMN 4: TYPOGRAPHY (SUB) */}
-          <div className="space-y-3 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
-            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
-                <h3 className="text-[10px] font-black text-purple-500 uppercase flex items-center gap-2"><MdTextFields size={16}/> Sub Header</h3>
-                <input type="checkbox" className="w-4 h-4 accent-purple-500" checked={!!formData.isSubHeaderPresent} onChange={e => setFormData({...formData, isSubHeaderPresent: e.target.checked})} />
-            </div>
-            <div className={`space-y-2.5 transition-opacity ${!formData.isSubHeaderPresent ? 'opacity-20 pointer-events-none' : ''}`}>
-                <input type="text" placeholder="Sub Font Name" className="w-full border rounded px-2 py-2 text-[10px]" 
-                  value={formData.subHeaderFontName || ""} onChange={e => setFormData({...formData, subHeaderFontName: e.target.value})} />
-                <div className="flex gap-2">
-                    <input type="color" className="w-10 h-9 rounded shadow-inner" value={formData.subHeaderColor || "#CCCCCC"} onChange={e => setFormData({...formData, subHeaderColor: e.target.value})} />
-                    <input type="number" placeholder="Size" className="w-full border rounded px-2 text-xs font-bold text-center" 
-                      value={formData.subHeaderSize ?? ""} onChange={e => setFormData({...formData, subHeaderSize: e.target.value})} />
-                </div>
-                <select className="w-full border rounded text-[10px] p-2 font-bold bg-slate-50 uppercase" value={formData.subHeaderFontType || "NORMAL"} onChange={e => setFormData({...formData, subHeaderFontType: e.target.value})}>
-                    <option value="NORMAL">Normal</option><option value="BOLD">Bold</option><option value="ITALIC">Italic</option>
-                </select>
-            </div>
-          </div>
-        </div>
-
-        {/* UTILITIES: LINE, OVERLAY, AUDIO */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-dashed border-gray-200">
-            {/* LINE CONFIG */}
-            <div className="bg-white p-3 border rounded-xl flex items-center justify-between gap-4 shadow-sm">
-              <div className="flex flex-col items-center">
-                  <span className="text-[8px] font-black text-gray-400 mb-1">DIVIDER</span>
-                  <input type="checkbox" className="w-5 h-5 accent-red-500" checked={!!formData.isLinePresent} onChange={e => setFormData({...formData, isLinePresent: e.target.checked})} />
-              </div>
-              <div className={`flex gap-2 items-center flex-1 transition-opacity ${!formData.isLinePresent && 'opacity-20'}`}>
-                <input type="color" className="w-10 h-10 rounded-lg cursor-pointer" value={formData.lineColor || "#FF0000"} onChange={e => setFormData({...formData, lineColor: e.target.value})} />
-                <input type="number" placeholder="Width" className="w-full border rounded-lg p-2 text-xs text-center font-bold" 
-                  value={formData.lineWidth ?? ""} onChange={e => setFormData({...formData, lineWidth: e.target.value})} />
-              </div>
-            </div>
-
-            {/* OVERLAY GEOMETRY */}
-            <div className="bg-white p-3 border rounded-xl flex flex-col justify-center shadow-sm">
-              <span className="text-[9px] font-black text-gray-400 block mb-2 uppercase text-center tracking-widest">Overlay Dim (W × H)</span>
-              <div className="flex gap-2">
-                <input type="number" placeholder="Width" className="w-1/2 border-2 rounded-lg p-2 text-[11px] text-center font-bold focus:border-blue-400 outline-none" value={formData.adImageWidth ?? ""} onChange={e => setFormData({...formData, adImageWidth: e.target.value})} />
-                <input type="number" placeholder="Height" className="w-1/2 border-2 rounded-lg p-2 text-[11px] text-center font-bold focus:border-blue-400 outline-none" value={formData.adImageHeight ?? ""} onChange={e => setFormData({...formData, adImageHeight: e.target.value})} />
-              </div>
-            </div>
-
-            {/* AUDIO CONFIG */}
-            <div className="bg-white p-3 border rounded-xl sm:col-span-2 flex items-center gap-4 shadow-sm">
-              <div className="flex flex-col items-center">
-                <span className="text-[8px] font-black text-gray-400 mb-1 uppercase">AUDIO</span>
-                <input type="checkbox" className="w-5 h-5 accent-green-600" checked={!!formData.isAudio} onChange={e => setFormData({...formData, isAudio: e.target.checked})} />
-              </div>
-              <div className={`flex flex-1 gap-2 items-center transition-opacity ${!formData.isAudio && 'opacity-20'}`}>
-                <div className="relative flex-1">
-                    <MdMusicNote className="absolute left-2 top-2.5 text-gray-400" size={14}/>
-                    <input type="text" placeholder="Audio Multimedia UUID" className="w-full border rounded-lg py-2 pl-7 pr-2 text-[10px] font-mono bg-slate-50" 
-                      value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
-                </div>
-                <div className="flex flex-col w-16">
-                    <span className="text-[7px] text-center font-bold text-gray-400 uppercase">VOL %</span>
-                    <input type="number" className="w-full border rounded-lg p-1.5 text-[10px] text-center font-black" 
-                        value={formData.audioVolumne ?? ""} onChange={e => setFormData({...formData, audioVolumne: e.target.value})} />
-                </div>
-              </div>
-            </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-3 mt-8">
-          <button onClick={handleSubmit} className="flex-1 bg-black text-white py-4 rounded-xl text-[11px] font-black uppercase tracking-[2px] hover:bg-gray-800 transition shadow-lg active:scale-95">
-            {editingId ? "Update Configuration" : "Initialize Template"}
+      {/* HEADER BAR */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+            <MdArrowBack size={20} className="text-slate-600" />
           </button>
-          {editingId && (
-            <button onClick={reset} className="py-4 px-8 bg-rose-50 text-rose-500 rounded-xl hover:bg-rose-500 hover:text-white transition border border-rose-100 flex justify-center active:scale-95">
-              <MdClose size={24}/>
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* DATA VISUALIZATION SECTION */}
-      <div className="mt-4 border rounded-2xl overflow-hidden shadow-sm">
-        <div className="hidden lg:block overflow-x-auto">
-            <table className="w-full text-sm">
-                <thead>
-                    <tr className="text-[10px] font-black text-gray-400 uppercase border-b bg-gray-50/50 text-center">
-                        <th className="py-4 px-4 text-left w-12">State</th>
-                        <th className="py-4 text-left">Profile Identity</th>
-                        <th className="py-4">Typography</th>
-                        <th className="py-4">Visual Props</th>
-                        <th className="py-4 px-4 text-right">Management</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {intros.map(intro => (
-                        <tr key={intro.id} className={`hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0 ${intro.active ? 'bg-blue-50/30' : ''}`}>
-                            <td className="py-4 px-4">
-                                <button onClick={() => activateIntro(intro.id)} className="active:scale-90 transition">
-                                    {intro.active ? <MdCheckCircle className="text-blue-500" size={26}/> : <MdRadioButtonUnchecked className="text-gray-200" size={26}/>}
-                                </button>
-                            </td>
-                            <td className="py-4">
-                                <div className="flex flex-col text-left">
-                                    <span className="font-black text-gray-800 uppercase text-xs tracking-tight leading-none mb-1">{intro.name}</span>
-                                    <span className="text-[9px] text-gray-400 font-bold max-w-[180px] truncate">{intro.description || "System Default Template"}</span>
-                                </div>
-                            </td>
-                            <td className="py-4 text-center">
-                                <div className="flex flex-col items-center gap-1">
-                                    <span className="text-[9px] bg-slate-100 px-2 py-0.5 rounded font-bold text-gray-600 uppercase">{intro.headerFontName} · {intro.headerSize}px</span>
-                                    {intro.isSubHeaderPresent && <span className="text-[8px] text-gray-400 italic">Sub: {intro.subHeaderSize}px</span>}
-                                </div>
-                            </td>
-                            <td className="py-4">
-                                <div className="flex gap-3 justify-center items-center">
-                                    <div className="relative group">
-                                        <div className="w-7 h-7 rounded-lg border-2 border-white shadow-md overflow-hidden" style={{ backgroundColor: intro.backgroundColor || '#000', opacity: intro.backgroundOpacity }}>
-                                            {intro.isBackgroundImage && <div className="w-full h-full bg-blue-400 flex items-center justify-center text-white"><MdImage size={14}/></div>}
-                                        </div>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        {intro.isAudio && <MdMusicNote size={14} className="text-green-500"/>}
-                                        {intro.isLinePresent && <MdHorizontalRule size={14} className="text-red-500"/>}
-                                    </div>
-                                </div>
-                            </td>
-                            <td className="py-4 px-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                    <button onClick={() => handleEdit(intro)} className="p-2 text-blue-500 hover:bg-blue-100 rounded-lg transition-colors"><MdEdit size={18}/></button>
-                                    <button onClick={() => deleteIntro(intro.id)} className="p-2 text-gray-300 hover:text-rose-500 transition-colors"><MdDelete size={18}/></button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+          <div>
+            <h2 className="text-sm font-black text-slate-800 uppercase leading-none mb-1">Intro Templates</h2>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500"></span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{intros.length} Layouts Loaded</span>
+            </div>
+          </div>
         </div>
         
-        {/* Mobile View - Preserved from your original */}
-        <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50">
-            {intros.map(intro => (
-                <div key={intro.id} className={`p-4 rounded-2xl border-2 transition-all shadow-sm ${intro.active ? 'border-blue-500 bg-white' : 'bg-white border-gray-100'}`}>
-                    <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                            <button onClick={() => activateIntro(intro.id)}>
-                                {intro.active ? <MdCheckCircle className="text-blue-500" size={26}/> : <MdRadioButtonUnchecked className="text-gray-200" size={26}/>}
-                            </button>
-                            <div>
-                                <h4 className="font-black text-[11px] uppercase text-gray-800 leading-tight">{intro.name}</h4>
-                                <span className="text-[9px] text-gray-400 font-bold uppercase">{intro.headerFontName} / {intro.headerSize}px</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-1">
-                            <button onClick={() => handleEdit(intro)} className="p-2 bg-blue-50 text-blue-600 rounded-lg"><MdEdit size={16}/></button>
-                            <button onClick={() => deleteIntro(intro.id)} className="p-2 bg-red-50 text-red-500 rounded-lg"><MdDelete size={16}/></button>
-                        </div>
-                    </div>
-                </div>
-            ))}
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button onClick={() => fetchIntros()} className="flex-1 sm:flex-none bg-white p-2.5 rounded-lg text-slate-400 border border-slate-200 hover:text-slate-900 transition shadow-sm">
+            <MdRefresh size={20} />
+          </button>
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="flex-3 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-black text-[10px] font-black transition uppercase tracking-widest shadow-md active:scale-95"
+          >
+            <MdAdd size={18} /> Create Template
+          </button>
         </div>
       </div>
-    </motion.div>
+
+      {/* GRID LAYOUT */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {intros.map((intro) => (
+          <motion.div layout key={intro.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            <div className={`absolute top-0 left-0 w-1 h-full ${intro.active ? 'bg-purple-600' : 'bg-slate-200'}`}></div>
+            
+            <div className="flex justify-between items-start mb-4">
+              <div className="max-w-[200px]">
+                <h4 className="font-black text-slate-900 uppercase text-xs mb-1 truncate leading-tight">
+                  {intro.name || "Unnamed Layout"}
+                </h4>
+                <p className="text-[10px] text-slate-500 font-medium line-clamp-1 mb-2">
+                  {intro.description || "No description provided."}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                   <span className="text-[9px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-black uppercase border border-slate-200">
+                     {intro.headerFontName || 'Default'} · {intro.headerSize || 0}px
+                   </span>
+                </div>
+              </div>
+
+              <div className="flex gap-1">
+                <button onClick={() => startEdit(intro)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                  <MdEdit size={18} />
+                </button>
+                <button onClick={() => deleteIntro(intro.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                  <MdDelete size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Visual Specs Preview */}
+            <div className="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-2 rounded-xl border border-slate-100">
+                <div className="flex items-center gap-2">
+                   <div className="w-6 h-6 rounded border border-white shadow-sm" style={{ backgroundColor: intro.backgroundColor || '#000', opacity: intro.backgroundOpacity || 1 }}></div>
+                   <span className="text-[8px] font-black text-slate-500 uppercase">Canvas</span>
+                </div>
+                <div className="flex items-center gap-2 justify-end">
+                   <span className="text-[8px] font-black text-slate-400 uppercase">Audio:</span>
+                   <span className={`text-[8px] font-black ${intro.isAudio ? 'text-emerald-600' : 'text-slate-300'}`}>{intro.isAudio ? 'ON' : 'OFF'}</span>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+               <button onClick={() => activateIntro(intro.id)} className="flex items-center gap-2 group">
+                  {intro.active ? <MdCheckCircle size={22} className="text-purple-600"/> : <MdRadioButtonUnchecked size={22} className="text-slate-200 group-hover:text-purple-300"/>}
+                  <span className={`text-[10px] font-black uppercase ${intro.active ? 'text-purple-600' : 'text-slate-400'}`}>
+                    {intro.active ? 'Selected' : 'Use Template'}
+                  </span>
+               </button>
+               <div className="flex gap-1">
+                  {intro.isLinePresent && <MdLayers className="text-rose-400" size={14}/>}
+                  {intro.isBackgroundImage && <MdImage className="text-blue-400" size={14}/>}
+               </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* MODAL CONFIGURATION */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} 
+              className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+              
+              <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-purple-600 text-white rounded-lg"><MdPalette size={20} /></div>
+                  <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest leading-none">
+                    {editingId ? "Modify Template Core" : "Initialize New Intro Design"}
+                  </h3>
+                </div>
+                <button onClick={resetForm} className="p-2 text-slate-400 hover:text-rose-500 transition"><MdClose size={24} /></button>
+              </div>
+
+              <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 max-h-[75vh] overflow-y-auto">
+                
+                {/* COLUMN 1: IDENTITY & CANVAS */}
+                <div className="space-y-6">
+                    <section className="space-y-3">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><MdSettings size={14}/> Identity</label>
+                      <input type="text" placeholder="Layout Name" className="w-full border-2 border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-purple-500 transition-all" 
+                        value={formData.name || ""} onChange={e => setFormData({...formData, name: e.target.value})} />
+                      <textarea placeholder="Layout Description..." className="w-full border-2 border-slate-100 rounded-xl px-4 py-2 text-[11px] h-20 resize-none outline-none focus:border-purple-500" 
+                        value={formData.description || ""} onChange={e => setFormData({...formData, description: e.target.value})} />
+                    </section>
+
+                    <section className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><MdFormatColorFill size={14}/> Canvas Logic</label>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[9px] font-black text-slate-500">IMAGE OVERLAY</span>
+                        <input type="checkbox" className="w-4 h-4 accent-purple-600" checked={formData.isBackgroundImage} onChange={e => setFormData({...formData, isBackgroundImage: e.target.checked})} />
+                      </div>
+                      
+                      {formData.isBackgroundImage ? (
+                        <input type="text" placeholder="Image UUID Key" className="w-full border rounded-lg p-2 text-[10px] font-mono bg-white" 
+                          value={formData.backgroundImage || ""} onChange={e => setFormData({...formData, backgroundImage: e.target.value})} />
+                      ) : (
+                        <div className="flex items-center gap-4">
+                           <input type="color" className="w-10 h-10 rounded shadow-sm border-0" value={formData.backgroundColor || "#000000"} onChange={e => setFormData({...formData, backgroundColor: e.target.value})} />
+                           <div className="flex-1">
+                              <div className="flex justify-between text-[8px] font-black mb-1"><span>OPACITY</span><span>{Math.round((formData.backgroundOpacity || 0) * 100)}%</span></div>
+                              <input type="range" min="0" max="1" step="0.1" className="w-full accent-purple-600" value={formData.backgroundOpacity || 0} onChange={e => setFormData({...formData, backgroundOpacity: e.target.value})} />
+                           </div>
+                        </div>
+                      )}
+                    </section>
+                </div>
+
+                {/* COLUMN 2: TYPOGRAPHY ENGINE */}
+                <div className="space-y-6 md:border-x border-slate-100 md:px-6">
+                    {/* Header Section */}
+                    <section className="space-y-4">
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><MdTextFields size={16}/> Header</label>
+                        <input type="checkbox" className="w-4 h-4 accent-slate-900" checked={formData.isHeaderPresent} onChange={e => setFormData({...formData, isHeaderPresent: e.target.checked})} />
+                      </div>
+                      <div className={`space-y-3 ${!formData.isHeaderPresent && 'opacity-20 pointer-events-none'}`}>
+                        <input type="text" placeholder="Font Family" className="w-full border rounded-lg p-2 text-[10px] font-bold" value={formData.headerFontName || ""} onChange={e => setFormData({...formData, headerFontName: e.target.value})} />
+                        <div className="flex gap-2">
+                           <input type="color" className="w-10 h-9 rounded" value={formData.headerColor || "#FFFFFF"} onChange={e => setFormData({...formData, headerColor: e.target.value})} />
+                           <input type="number" placeholder="Size" className="flex-1 border rounded-lg p-2 text-xs font-black" value={formData.headerSize || ""} onChange={e => setFormData({...formData, headerSize: e.target.value})} />
+                        </div>
+                        <select className="w-full border rounded-lg p-2 text-[10px] font-black uppercase bg-slate-50" value={formData.headerFontType || ""} onChange={e => setFormData({...formData, headerFontType: e.target.value})}>
+                          <option value="">Select Type</option><option value="NORMAL">Normal</option><option value="BOLD">Bold</option><option value="ITALIC">Italic</option>
+                        </select>
+                      </div>
+                    </section>
+
+                    {/* Subheader Section */}
+                    <section className="space-y-4 pt-4">
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><MdOutlineTextFields size={16}/> Sub Header</label>
+                        <input type="checkbox" className="w-4 h-4 accent-slate-900" checked={formData.isSubHeaderPresent} onChange={e => setFormData({...formData, isSubHeaderPresent: e.target.checked})} />
+                      </div>
+                      <div className={`space-y-3 ${!formData.isSubHeaderPresent && 'opacity-20 pointer-events-none'}`}>
+                        <input type="text" placeholder="Sub Font Family" className="w-full border rounded-lg p-2 text-[10px] font-bold" value={formData.subHeaderFontName || ""} onChange={e => setFormData({...formData, subHeaderFontName: e.target.value})} />
+                        <div className="flex gap-2">
+                           <input type="color" className="w-10 h-9 rounded" value={formData.subHeaderColor || "#CCCCCC"} onChange={e => setFormData({...formData, subHeaderColor: e.target.value})} />
+                           <input type="number" placeholder="Size" className="flex-1 border rounded-lg p-2 text-xs font-black" value={formData.subHeaderSize || ""} onChange={e => setFormData({...formData, subHeaderSize: e.target.value})} />
+                        </div>
+                        <select className="w-full border rounded-lg p-2 text-[10px] font-black uppercase bg-slate-50" value={formData.subHeaderFontType || ""} onChange={e => setFormData({...formData, subHeaderFontType: e.target.value})}>
+                          <option value="">Select Type</option><option value="NORMAL">Normal</option><option value="BOLD">Bold</option><option value="ITALIC">Italic</option>
+                        </select>
+                      </div>
+                    </section>
+                </div>
+
+                {/* COLUMN 3: DECOR & AUDIO */}
+                <div className="space-y-6">
+                   <section className="p-4 bg-slate-900 rounded-2xl text-white space-y-4">
+                      <label className="text-[9px] font-black text-slate-500 uppercase tracking-[2px] block text-center">Decoration & Line</label>
+                      <div className="flex items-center gap-4">
+                        <input type="checkbox" className="w-5 h-5 accent-rose-500" checked={formData.isLinePresent} onChange={e => setFormData({...formData, isLinePresent: e.target.checked})} />
+                        <input type="color" className="w-10 h-10 rounded border-2 border-slate-700" value={formData.lineColor || "#FF0000"} onChange={e => setFormData({...formData, lineColor: e.target.value})} />
+                        <input type="number" placeholder="Width" className="flex-1 bg-slate-800 border-0 rounded-lg p-2 text-xs font-black text-white outline-none focus:ring-1 ring-rose-500" value={formData.lineWidth || ""} onChange={e => setFormData({...formData, lineWidth: e.target.value})} />
+                      </div>
+                   </section>
+
+                   <section className="p-4 border-2 border-slate-100 rounded-2xl space-y-4">
+                      <label className="text-[10px] font-black text-slate-400 uppercase flex items-center gap-2"><MdStraighten size={16}/> Geometry Overlay</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[8px] font-black text-slate-400 block mb-1">WIDTH</span>
+                          <input type="number" className="w-full border rounded-lg p-2 text-xs font-black" value={formData.adImageWidth || ""} onChange={e => setFormData({...formData, adImageWidth: e.target.value})} />
+                        </div>
+                        <div>
+                          <span className="text-[8px] font-black text-slate-400 block mb-1">HEIGHT</span>
+                          <input type="number" className="w-full border rounded-lg p-2 text-xs font-black" value={formData.adImageHeight || ""} onChange={e => setFormData({...formData, adImageHeight: e.target.value})} />
+                        </div>
+                      </div>
+                   </section>
+
+                   <section className="p-4 bg-blue-50/50 border border-blue-100 rounded-2xl space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2"><MdMusicNote size={16}/> Audio</span>
+                        <input type="checkbox" className="w-5 h-5 accent-blue-600" checked={formData.isAudio} onChange={e => setFormData({...formData, isAudio: e.target.checked})} />
+                      </div>
+                      <div className={!formData.isAudio ? 'opacity-20 pointer-events-none' : ''}>
+                        <input type="text" placeholder="Audio UUID" className="w-full border rounded-lg p-2 text-[10px] font-mono mb-2" value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
+                        <input type="number" placeholder="Volume %" className="w-full border rounded-lg p-2 text-xs font-black" value={formData.audioVolumne || ""} onChange={e => setFormData({...formData, audioVolumne: e.target.value})} />
+                      </div>
+                   </section>
+                </div>
+              </div>
+
+              {/* FOOTER */}
+              <div className="p-6 bg-slate-50 border-t flex gap-3">
+                <button onClick={resetForm} className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:bg-white transition-all">Cancel</button>
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={!formData.name}
+                  className="flex-[2] py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] bg-slate-900 text-white shadow-lg hover:bg-black transition-all disabled:opacity-30"
+                >
+                   {editingId ? "Commit Changes" : "Deploy Template"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }

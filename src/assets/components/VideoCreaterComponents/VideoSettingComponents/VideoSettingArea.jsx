@@ -2,262 +2,299 @@ import { useContext, useState } from "react";
 import { 
   MdArrowBack, MdRefresh, MdEdit, MdDelete, MdCheckCircle, 
   MdRadioButtonUnchecked, MdClose, MdMusicNote, MdSettings, 
-  MdVideocam, MdTimer, MdViewQuilt, MdGraphicEq
+  MdAdd, MdAspectRatio, MdSlowMotionVideo, MdDescription,
+  MdLayers, MdVolumeUp, MdTimer, MdGraphicEq
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import VideoSettingContext from "../../../contexts/VideoCreater/VideoSetting/VideoSettingContext";
 
 export default function VideoSettingArea({ onBack }) {
   const { settings, fetchSettings, createSetting, updateSetting, deleteSetting, activateSetting } = useContext(VideoSettingContext);
+  
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
-  const initialForm = {
-    name: "", description: "", fps: 30, height: 1080, width: 1920,
-    introPresent: false, introTime: 0,
-    mainVideoPresent: true, mainVideoTime: 0,
-    outroPresent: false, outroTime: 0, 
-    sequence: "I,M,O", isAudio: false,
-    audioMultiMediaKey: "", audioVolumne: 100
+  // 100% COMPLETE DTO MAPPING (Logic preserved)
+  const emptyForm = {
+    id: null,
+    name: null,
+    description: null,
+    active: false,
+    fps: null,
+    height: null,
+    width: null,
+    introPresent: false,
+    introTime: null,
+    mainVideoPresent: false,
+    mainVideoTime: null,
+    outroPresent: false,
+    outroTime: null,
+    sequence: null,
+    isAudio: false,
+    audioMultiMediaKey: null,
+    audioVolumne: null,
+    lastlyUsed: null 
   };
 
-  const [formData, setFormData] = useState(initialForm);
+  const [formData, setFormData] = useState(emptyForm);
 
-  const reset = () => { 
+  const resetForm = () => { 
     setEditingId(null); 
-    setFormData(initialForm); 
+    setFormData(emptyForm); 
+    setIsModalOpen(false);
   };
 
   const handleSubmit = async () => {
     if (!formData.name) return;
+    
+    const payload = {
+      ...formData,
+      width: formData.width ? parseInt(formData.width) : null,
+      height: formData.height ? parseInt(formData.height) : null,
+      fps: formData.fps ? parseInt(formData.fps) : null,
+      audioVolumne: formData.audioVolumne ? parseInt(formData.audioVolumne) : null,
+    };
+
     if (editingId) {
-      const success = await updateSetting(editingId, formData);
-      if (success) reset();
+      const success = await updateSetting(editingId, payload);
+      if (success) resetForm();
     } else {
-      createSetting(formData);
-      reset();
+      await createSetting(payload);
+      resetForm();
     }
   };
 
   const startEdit = (s) => { 
-    setEditingId(s.id); 
-    setFormData({ ...initialForm, ...s }); 
+    resetForm(); 
+    setTimeout(() => {
+      setEditingId(s.id); 
+      setFormData({ ...s }); 
+      setIsModalOpen(true);
+    }, 20);
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-white rounded-xl p-4 md:p-6 shadow-md mt-6 border border-gray-100">
+    <div className="relative min-h-screen bg-slate-50/50 p-3 md:p-6 font-sans text-slate-900">
       
-      {/* ENGINE HEADER */}
-      <div className="flex justify-between items-center mb-6 border-b pb-4">
-        <button onClick={onBack} className="flex items-center gap-2 bg-slate-100 px-4 py-2 rounded-lg hover:bg-slate-200 text-[10px] font-black transition uppercase tracking-wider shadow-sm active:scale-95">
-          <MdArrowBack size={16} /> BACK
-        </button>
-        <div className="flex items-center gap-4">
-          <button onClick={() => fetchSettings()} className="text-slate-400 hover:text-blue-600 transition-all hover:rotate-180 duration-500 p-2 bg-slate-50 rounded-full">
-            <MdRefresh size={22} />
+      {/* TOP HEADER */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 bg-white p-4 rounded-xl shadow-sm border border-slate-100">
+        <div className="flex items-center gap-3">
+          <button onClick={onBack} className="p-2 bg-slate-100 rounded-lg hover:bg-slate-200 transition">
+            <MdArrowBack size={20} className="text-slate-600" />
           </button>
-          <div className="text-right">
-            <h2 className="text-sm font-black text-slate-700 uppercase tracking-tight">Video Profiles</h2>
-            <span className="text-[10px] text-blue-500 font-bold uppercase tracking-widest leading-none">Engine Configuration</span>
+          <div>
+            <h2 className="text-sm font-black text-slate-800 uppercase leading-none mb-1">Engine Profiles</h2>
+            <div className="flex items-center gap-2">
+              <span className={`w-2 h-2 rounded-full ${settings.length > 0 ? 'bg-blue-500' : 'bg-slate-300'}`}></span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{settings.length} Profiles Found</span>
+            </div>
           </div>
+        </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button onClick={() => fetchSettings()} className="flex-1 sm:flex-none bg-white p-2.5 rounded-lg text-slate-400 border border-slate-200 hover:text-slate-900 transition shadow-sm">
+            <MdRefresh size={20} />
+          </button>
+          <button 
+            onClick={() => { resetForm(); setIsModalOpen(true); }}
+            className="flex-3 sm:flex-none flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-2.5 rounded-lg hover:bg-black text-[10px] font-black transition uppercase tracking-widest shadow-md active:scale-95"
+          >
+            <MdAdd size={18} /> New Profile
+          </button>
         </div>
       </div>
 
-      {/* CONFIGURATION PANEL */}
-      <div className={`mb-8 p-6 rounded-2xl border-2 transition-all ${editingId ? 'border-blue-400 bg-blue-50/20' : 'bg-slate-50/50 border-slate-200 border-dashed'}`}>
-        <div className="flex items-center gap-2 mb-6 text-slate-500">
-            <MdSettings size={18} className={editingId ? "text-blue-500" : ""} />
-            <h3 className="text-[10px] font-black uppercase tracking-[2px]">{editingId ? "Modify Global Constants" : "Define New Render Profile"}</h3>
-        </div>
+      {/* GRID VIEW - FIXED VISIBILITY */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+        {settings.map((s) => (
+          <motion.div layout key={s.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+            {/* Left Status Bar */}
+            <div className={`absolute top-0 left-0 w-1 h-full ${s.active ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
+            
+            <div className="flex justify-between items-start mb-4">
+              <div className="max-w-[180px]">
+                {/* Title - Bold Black */}
+                <h4 className="font-black text-slate-900 uppercase text-xs mb-2 truncate leading-tight">
+                  {s.name || "Untitled Profile"}
+                </h4>
+                {/* Metadata - Visible Gray */}
+                <div className="flex flex-wrap gap-2">
+                   <span className="text-[9px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-black uppercase tracking-tighter border border-slate-200">
+                     {s.fps || 0} FPS
+                   </span>
+                   <span className="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-black uppercase tracking-tighter border border-blue-100">
+                     {s.width}x{s.height}
+                   </span>
+                </div>
+              </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
-          {/* GROUP 1: BASE PARAMETERS */}
-          <div className="lg:col-span-2 space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Profile Identity</label>
-                    <input type="text" placeholder="e.g., 4K TikTok Vertical" className="w-full border-2 rounded-xl px-3 py-2.5 text-xs font-bold outline-none focus:border-blue-500 transition shadow-sm bg-white"
-                        value={formData.name || ""} onChange={e => setFormData({...formData, name: e.target.value})} />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Description</label>
-                    <input type="text" placeholder="Brief use case..." className="w-full border-2 rounded-xl px-3 py-2.5 text-xs outline-none focus:border-blue-500 transition shadow-sm bg-white"
-                        value={formData.description || ""} onChange={e => setFormData({...formData, description: e.target.value})} />
-                </div>
-             </div>
-
-             <div className="grid grid-cols-3 gap-4">
-                <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Width (px)</label>
-                    <input type="number" className="w-full border-2 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-center focus:border-blue-500 outline-none bg-white" 
-                        value={formData.width ?? ""} onChange={e => setFormData({...formData, width: e.target.value})} />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Height (px)</label>
-                    <input type="number" className="w-full border-2 rounded-xl px-3 py-2.5 text-xs font-mono font-bold text-center focus:border-blue-500 outline-none bg-white" 
-                        value={formData.height ?? ""} onChange={e => setFormData({...formData, height: e.target.value})} />
-                </div>
-                <div className="space-y-1">
-                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Framerate</label>
-                    <input type="number" className="w-full border-2 rounded-xl px-3 py-2.5 text-xs font-black text-center text-blue-600 focus:border-blue-500 outline-none bg-white" 
-                        value={formData.fps ?? ""} onChange={e => setFormData({...formData, fps: e.target.value})} />
-                </div>
-             </div>
-          </div>
-
-          {/* GROUP 2: TIMELINE FLOW */}
-          <div className="lg:col-span-2 space-y-4">
-             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                {/* Intro */}
-                <div className={`p-3 rounded-xl border-2 transition-all bg-white ${formData.introPresent ? 'border-indigo-200 ring-4 ring-indigo-50' : 'border-slate-100 opacity-60'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-[9px] font-black text-indigo-500 uppercase flex items-center gap-1"><MdTimer/> Intro</span>
-                        <input type="checkbox" className="accent-indigo-500" checked={!!formData.introPresent} onChange={e => setFormData({...formData, introPresent: e.target.checked})} />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <input type="number" className="w-full bg-slate-50 rounded text-xs p-1 font-bold text-center outline-none" placeholder="Secs" 
-                            value={formData.introTime ?? ""} onChange={e => setFormData({...formData, introTime: e.target.value})} />
-                        <span className="text-[8px] font-bold text-slate-400">SEC</span>
-                    </div>
-                </div>
-
-                {/* Main */}
-                <div className={`p-3 rounded-xl border-2 transition-all bg-white ${formData.mainVideoPresent ? 'border-blue-200 ring-4 ring-blue-50 shadow-sm' : 'border-slate-100 opacity-60'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-[9px] font-black text-blue-600 uppercase flex items-center gap-1"><MdVideocam/> Main</span>
-                        <input type="checkbox" className="accent-blue-600" checked={!!formData.mainVideoPresent} onChange={e => setFormData({...formData, mainVideoPresent: e.target.checked})} />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <input type="number" className="w-full bg-blue-50 rounded text-xs p-1 font-black text-center outline-none" placeholder="Secs" 
-                            value={formData.mainVideoTime ?? ""} onChange={e => setFormData({...formData, mainVideoTime: e.target.value})} />
-                        <span className="text-[8px] font-bold text-blue-400">SEC</span>
-                    </div>
-                </div>
-
-                {/* Outro */}
-                <div className={`p-3 rounded-xl border-2 transition-all bg-white ${formData.outroPresent ? 'border-purple-200 ring-4 ring-purple-50' : 'border-slate-100 opacity-60'}`}>
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-[9px] font-black text-purple-500 uppercase flex items-center gap-1"><MdTimer/> Outro</span>
-                        <input type="checkbox" className="accent-purple-500" checked={!!formData.outroPresent} onChange={e => setFormData({...formData, outroPresent: e.target.checked})} />
-                    </div>
-                    <div className="flex items-center gap-1">
-                        <input type="number" className="w-full bg-slate-50 rounded text-xs p-1 font-bold text-center outline-none" placeholder="Secs" 
-                            value={formData.outroTime ?? ""} onChange={e => setFormData({...formData, outroTime: e.target.value})} />
-                        <span className="text-[8px] font-bold text-slate-400">SEC</span>
-                    </div>
-                </div>
-             </div>
-
-             <div className="flex gap-4">
-                <div className="flex-1 space-y-1">
-                    <label className="text-[8px] font-black text-slate-400 uppercase ml-1 flex items-center gap-1"><MdViewQuilt/> Composition Order</label>
-                    <input type="text" placeholder="I,M,O" className="w-full border-2 rounded-xl px-3 py-2 text-xs font-mono font-black text-center uppercase focus:border-blue-500 outline-none bg-white tracking-[5px]" 
-                        value={formData.sequence || ""} onChange={e => setFormData({...formData, sequence: e.target.value.toUpperCase()})} />
-                </div>
-                <div className="w-1/3 space-y-1">
-                    <label className="text-[8px] font-black text-slate-400 uppercase ml-1 flex items-center gap-1"><MdMusicNote/> Volume</label>
-                    <div className="flex items-center gap-3 border-2 rounded-xl px-3 py-2 bg-white">
-                        <input type="checkbox" className="accent-slate-800" checked={!!formData.isAudio} onChange={e => setFormData({...formData, isAudio: e.target.checked})} />
-                        <input type="number" className="w-full text-xs font-black text-center outline-none" 
-                            value={formData.audioVolumne ?? ""} onChange={e => setFormData({...formData, audioVolumne: e.target.value})} />
-                    </div>
-                </div>
-             </div>
-          </div>
-        </div>
-
-        {/* CONDITIONAL AUDIO KEY */}
-        <AnimatePresence>
-            {formData.isAudio && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mt-4 pt-4 border-t border-dashed border-slate-200">
-                    <div className="flex items-center gap-3 bg-white p-3 rounded-xl border shadow-inner">
-                        <MdGraphicEq className="text-blue-500" size={20}/>
-                        <input type="text" placeholder="Audio Multimedia Source UUID" className="flex-1 text-[10px] font-mono outline-none"
-                        value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-
-        <div className="flex gap-3 mt-8">
-            <button onClick={handleSubmit} className="flex-1 bg-black text-white rounded-xl text-[11px] font-black uppercase tracking-[3px] hover:bg-blue-600 transition-all py-4 shadow-lg active:scale-[0.98]">
-                {editingId ? "Commit Profile Update" : "Establish New Engine Profile"}
-            </button>
-            {editingId && (
-                <button onClick={reset} className="bg-rose-50 text-rose-500 px-6 rounded-xl hover:bg-rose-500 hover:text-white transition-colors border border-rose-100 flex items-center shadow-sm">
-                    <MdClose size={24}/>
+              {/* Action Buttons */}
+              <div className="flex gap-1">
+                <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
+                  <MdEdit size={18} />
                 </button>
-            )}
-        </div>
+                <button onClick={() => deleteSetting(s.id)} className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition">
+                  <MdDelete size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Timeline Visualizer */}
+            <div className="space-y-1.5 mb-4">
+               <div className="flex justify-between items-center text-[8px] font-black text-slate-400 uppercase">
+                  <span>Timeline Flow</span>
+                  <span className="text-blue-600 font-mono tracking-widest bg-blue-50 px-1 rounded">{s.sequence || "---"}</span>
+               </div>
+               <div className="flex items-center gap-1 h-6 bg-slate-50 rounded-md p-1 border border-slate-100">
+                  {s.introPresent && <div className="h-full flex-1 bg-indigo-500 rounded-sm" />}
+                  {s.mainVideoPresent ? <div className="h-full flex-[3] bg-blue-600 rounded-sm" /> : <div className="h-full flex-[3] border border-dashed border-slate-200 rounded-sm" />}
+                  {s.outroPresent && <div className="h-full flex-1 bg-purple-500 rounded-sm" />}
+               </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+               <div className="flex items-center gap-2">
+                  <button onClick={() => activateSetting(s.id)} className={`transition-all ${s.active ? 'text-blue-600' : 'text-slate-300 hover:text-blue-400'}`}>
+                    {s.active ? <MdCheckCircle size={24}/> : <MdRadioButtonUnchecked size={24}/>}
+                  </button>
+                  <span className={`text-[10px] font-black uppercase ${s.active ? 'text-blue-600' : 'text-slate-400'}`}>
+                    {s.active ? 'Active' : 'Standby'}
+                  </span>
+               </div>
+               <div className="flex flex-col items-end">
+                  <span className="text-[7px] font-black text-slate-300 uppercase leading-none">Audio</span>
+                  <span className={`text-[9px] font-bold ${s.isAudio ? 'text-emerald-600' : 'text-slate-300'}`}>
+                    {s.isAudio ? 'ENABLED' : 'MUTED'}
+                  </span>
+               </div>
+            </div>
+          </motion.div>
+        ))}
       </div>
 
-      {/* REPOSITORY TABLE */}
-      <div className="overflow-x-auto rounded-xl border border-slate-100 shadow-sm">
-        <table className="w-full">
-          <thead>
-            <tr className="text-[10px] font-black uppercase text-slate-400 border-b bg-slate-50/50">
-              <th className="py-4 px-4 text-center w-16">Active</th>
-              <th className="py-4 text-left">Configuration Profile</th>
-              <th className="py-4 text-center">Engine Specs</th>
-              <th className="py-4 text-center">Sequence Flow</th>
-              <th className="py-4 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <AnimatePresence mode="popLayout">
-                {settings.map(s => (
-                <motion.tr key={s.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} className={`hover:bg-slate-50 border-b border-slate-50 last:border-0 transition-colors ${s.active ? 'bg-blue-50/30' : ''}`}>
-                    <td className="py-4 px-4 text-center">
-                    <button onClick={() => activateSetting(s.id)} className="transition-transform active:scale-125">
-                        {s.active ? <MdCheckCircle className="text-blue-500" size={24}/> : <MdRadioButtonUnchecked className="text-slate-200" size={24}/>}
-                    </button>
-                    </td>
-                    <td className="py-4">
-                    <div className="flex flex-col">
-                        <span className="font-black text-slate-800 uppercase text-xs tracking-tight leading-none mb-1">{s.name}</span>
-                        <span className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">{s.description || "System Global Profile"}</span>
-                    </div>
-                    </td>
-                    <td className="py-4 text-center">
-                    <div className="inline-flex flex-col bg-slate-100 px-3 py-1 rounded-lg border border-slate-200">
-                        <span className="text-[10px] font-mono font-black text-slate-600 leading-none">
-                            {s.width}×{s.height}
-                        </span>
-                        <span className="text-[8px] font-bold text-blue-500 uppercase tracking-widest">{s.fps} FPS</span>
-                    </div>
-                    </td>
-                    <td className="py-4 text-center">
-                    <div className="flex gap-1 justify-center items-center">
-                        <div className="flex bg-white rounded-md border shadow-sm overflow-hidden">
-                            {s.introPresent && <div className="px-2 py-1 bg-indigo-50 text-indigo-600 text-[8px] font-black border-r border-indigo-100">{s.introTime}s</div>}
-                            
-                            {s.mainVideoPresent ? (
-                                <div className="px-2 py-1 bg-blue-600 text-white text-[8px] font-black">M: {s.mainVideoTime}s</div>
-                            ) : (
-                                <div className="px-2 py-1 bg-slate-100 text-slate-400 text-[8px] font-black italic">SKIP</div>
-                            )}
+      {/* MODAL CONFIGURATION */}
+      <AnimatePresence>
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} 
+              className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+              
+              <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-800 text-white rounded-lg"><MdSettings size={20} /></div>
+                  <h3 className="text-xs font-black text-slate-700 uppercase tracking-widest leading-none">
+                    {editingId ? "Update Global Constants" : "Establish New Engine Profile"}
+                  </h3>
+                </div>
+                <button onClick={resetForm} className="p-2 text-slate-400 hover:text-rose-500 transition"><MdClose size={24} /></button>
+              </div>
 
-                            {s.outroPresent && <div className="px-2 py-1 bg-purple-50 text-purple-600 text-[8px] font-black border-l border-purple-100">{s.outroTime}s</div>}
+              <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-8 max-h-[70vh] overflow-y-auto">
+                
+                {/* LEFT COLUMN */}
+                <div className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Profile Name</label>
+                      <input type="text" className="w-full border-2 border-slate-100 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-slate-800 focus:bg-slate-50 transition-all" 
+                        value={formData.name || ""} onChange={e => setFormData({...formData, name: e.target.value})} />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Technical Notes</label>
+                      <textarea className="w-full border-2 border-slate-100 rounded-xl px-4 py-2.5 text-xs font-medium h-20 resize-none outline-none focus:border-slate-800 focus:bg-slate-50" 
+                        value={formData.description || ""} onChange={e => setFormData({...formData, description: e.target.value})} />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      {['width', 'height', 'fps'].map(field => (
+                        <div key={field} className="space-y-1">
+                          <label className="text-[9px] font-black text-slate-400 uppercase text-center block">{field}</label>
+                          <input type="number" className="w-full border-2 border-slate-100 rounded-xl py-2.5 text-xs font-black text-center outline-none focus:border-blue-500 focus:bg-blue-50/30" 
+                            value={formData[field] ?? ""} onChange={e => setFormData({...formData, [field]: e.target.value})} />
                         </div>
+                      ))}
                     </div>
-                    <div className="mt-1 text-[8px] font-mono font-bold text-slate-400 tracking-[3px]">{s.sequence}</div>
-                    </td>
-                    <td className="py-4 px-4 text-right">
-                    <div className="flex justify-end gap-1">
-                        <button onClick={() => startEdit(s)} className="p-2 text-blue-500 hover:bg-white rounded-lg shadow-sm border border-transparent hover:border-blue-100 transition-all">
-                            <MdEdit size={18}/>
-                        </button>
-                        <button onClick={() => deleteSetting(s.id)} className="p-2 text-slate-300 hover:text-rose-500 transition-colors">
-                            <MdDelete size={18}/>
-                        </button>
+
+                    <div className="p-4 bg-slate-900 rounded-xl shadow-inner border border-slate-800">
+                      <label className="text-[9px] font-black text-slate-500 uppercase block mb-1 text-center tracking-widest">Composition Sequence</label>
+                      <input type="text" className="w-full bg-transparent border-b border-slate-700 py-1 text-white text-lg font-black tracking-[10px] uppercase outline-none text-center focus:border-blue-500" 
+                        value={formData.sequence || ""} onChange={e => setFormData({...formData, sequence: e.target.value.toUpperCase()})} />
                     </div>
-                    </td>
-                </motion.tr>
-                ))}
-            </AnimatePresence>
-          </tbody>
-        </table>
-      </div>
-    </motion.div>
+                </div>
+
+                {/* RIGHT COLUMN */}
+                <div className="space-y-4">
+                   <h4 className="text-[9px] font-black text-slate-400 uppercase border-b border-slate-100 pb-2 flex items-center gap-2">
+                     <MdTimer size={16}/> Segment Logic
+                   </h4>
+                   
+                   <div className="space-y-2">
+                     {[
+                       { key: 'intro', label: 'Intro Segment', color: 'indigo' },
+                       { key: 'mainVideo', label: 'Main Feature', color: 'blue' },
+                       { key: 'outro', label: 'Outro Segment', color: 'purple' }
+                     ].map(seg => (
+                       <div key={seg.key} className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all ${formData[`${seg.key}Present`] ? `border-${seg.color}-100 bg-${seg.color}-50/30` : 'border-slate-50 bg-slate-50/50'}`}>
+                          <input type="checkbox" className="w-4 h-4 accent-slate-800 rounded" 
+                            checked={formData[`${seg.key}Present`] || false} 
+                            onChange={e => setFormData({...formData, [`${seg.key}Present`]: e.target.checked})} />
+                          <span className={`text-[10px] font-black uppercase flex-1 ${formData[`${seg.key}Present`] ? `text-${seg.color}-700` : 'text-slate-400'}`}>
+                            {seg.label}
+                          </span>
+                          <div className="relative w-24">
+                            <input type="number" className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-[10px] font-black outline-none focus:border-blue-400"
+                              value={formData[`${seg.key}Time`] ?? ""} 
+                              onChange={e => setFormData({...formData, [`${seg.key}Time`]: e.target.value})} />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[8px] font-bold text-slate-300">SEC</span>
+                          </div>
+                       </div>
+                     ))}
+                   </div>
+
+                   {/* AUDIO SUB-SYSTEM */}
+                   <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-[1.5rem] space-y-4">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2 text-blue-800">
+                            <div className="p-1.5 bg-blue-600 text-white rounded-lg shadow-sm"><MdMusicNote size={16}/></div>
+                            <span className="text-[10px] font-black uppercase tracking-wider">Audio Engine</span>
+                        </div>
+                        <button onClick={() => setFormData({...formData, isAudio: !formData.isAudio})} className="transition-transform active:scale-90">
+                           {formData.isAudio ? <MdCheckCircle className="text-blue-600" size={32}/> : <MdRadioButtonUnchecked className="text-slate-300" size={32}/>}
+                        </button>
+                      </div>
+
+                      <div className={`grid grid-cols-4 gap-3 transition-all ${formData.isAudio ? 'opacity-100' : 'opacity-20 pointer-events-none'}`}>
+                        <div className="col-span-1">
+                           <label className="text-[8px] font-black text-blue-400 uppercase mb-1 block">Vol %</label>
+                           <input type="number" className="w-full text-[10px] font-black p-2 rounded-lg border-2 border-white bg-white shadow-sm outline-none focus:border-blue-400" 
+                            value={formData.audioVolumne ?? ""} onChange={e => setFormData({...formData, audioVolumne: e.target.value})} />
+                        </div>
+                        <div className="col-span-3">
+                           <label className="text-[8px] font-black text-blue-400 uppercase mb-1 block">Multimedia UUID</label>
+                           <input type="text" className="w-full text-[9px] font-mono font-bold p-2 rounded-lg border-2 border-white bg-white shadow-sm outline-none focus:border-blue-400"
+                            placeholder="0000-0000..."
+                            value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
+                        </div>
+                      </div>
+                   </div>
+                </div>
+              </div>
+
+              {/* MODAL FOOTER */}
+              <div className="p-6 bg-slate-50 border-t flex gap-3">
+                <button onClick={resetForm} className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase text-slate-400 hover:bg-white transition-all">Discard</button>
+                <button 
+                  onClick={handleSubmit} 
+                  disabled={!formData.name}
+                  className="flex-[2] py-3 rounded-xl text-[10px] font-black uppercase tracking-[2px] bg-slate-900 text-white shadow-lg shadow-slate-200 hover:bg-black transition-all disabled:opacity-30 disabled:grayscale"
+                >
+                   {editingId ? "Update Engine Core" : "Deploy Profile"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
