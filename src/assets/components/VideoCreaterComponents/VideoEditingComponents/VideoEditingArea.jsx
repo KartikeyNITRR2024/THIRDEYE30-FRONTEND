@@ -1,7 +1,6 @@
 import { useContext } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { IoCloudUpload } from "react-icons/io5";
-import { MdOutlineAudioFile } from "react-icons/md";
+import { LuAudioLines } from "react-icons/lu";
 import PageContext from "../../../contexts/VideoCreater/Page/PageContext";
 import GeneratorsArea from "../../../components/VideoCreaterComponents/GeneratorsComponents/GeneratorsArea";
 import { MdArrowBack } from "react-icons/md";
@@ -56,25 +55,32 @@ export default function VideoEditingArea({ onBack }) {
       name: "News Area",
       icon: <FaNewspaper className="text-4xl" />,
     },
+    {
+      id: 79,
+      name: "Audio",
+      icon: <LuAudioLines className="text-4xl" />,
+    },
   ];
 
   const renderPage = () => {
     switch (page) {
-      case 81:
+      case 71:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 82:
+      case 72:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 83:
+      case 73:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 84:
+      case 74:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 85:
+      case 75:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 86:
+      case 76:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 87:
+      case 77:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
-      case 88:
+      case 78:
+        return <GeneratorsArea onBack={() => updatePage(null)} />;
+      case 79:
         return <GeneratorsArea onBack={() => updatePage(null)} />;
       default:
         return (

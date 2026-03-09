@@ -12,7 +12,9 @@ import { FaNewspaper } from "react-icons/fa6";
 import { RiStockFill } from "react-icons/ri";
 import { MdVideoFile } from "react-icons/md";
 import { MdVideoCall } from "react-icons/md";
-import { FaLayerGroup } from "react-icons/fa";
+import { RiAdvertisementFill } from "react-icons/ri";
+import { RiFileWordFill } from "react-icons/ri";
+import { FaTelegramPlane } from "react-icons/fa";
 import VideoEditingArea from "../../components/VideoCreaterComponents/VideoEditingComponents/VideoEditingArea";
 import GeneratorsArea from "../../components/VideoCreaterComponents/GeneratorsComponents/GeneratorsArea";
 import AudioGenerateArea from "../../components/VideoCreaterComponents/AudioGenerateComponents/AudioGenerateArea";
@@ -33,9 +35,15 @@ import HeaderArea from "../../components/VideoCreaterComponents/HeaderComponents
 import StockRaceArea from "../../components/VideoCreaterComponents/StockRaceComponents/StockRaceArea";
 import NewsImageArea from "../../components/VideoCreaterComponents/NewsImageComponents/NewsImageArea";
 import NewsTextSoundArea from "../../components/VideoCreaterComponents/NewsTextSoundComponents/NewsTextSoundArea";
+import TelegramBotArea from "../../components/VideoCreaterComponents/TelegramBotComponents/TelegramBotArea"; 
+import PromptArea from "../../components/VideoCreaterComponents/PromtComponents/PromtArea";
+import TtsSoundArea from "../../components/VideoCreaterComponents/TtsSoundComponents/TtsSoundArea";
+import AdvertisementArea from "../../components/VideoCreaterComponents/AdvertisementComponents/AdvertisementArea";
+import AdvertisementGroupArea from "../../components/VideoCreaterComponents/AdvertisementComponents/AdvertisementGroupArea";
+import ContentAdvertisementArea from "../../components/VideoCreaterComponents/AdvertisementComponents/ContentAdvertisementArea";
+
 export default function VideoCreater() {
   const { page, updatePage } = useContext(PageContext);
-
   const adminItems = [
     {
       id: 1,
@@ -70,6 +78,9 @@ export default function VideoCreater() {
     },
     { id: 8, name: "Generators Urls", icon: <SiKaggle className="text-4xl" /> },
     { id: 9, name: "Stock Group", icon: <RiStockFill className="text-4xl" /> },
+    { id: 10, name: "Advertisement", icon: <RiAdvertisementFill className="text-4xl" /> },
+    { id: 11, name: "Promt", icon: <RiFileWordFill className="text-4xl" /> },
+    { id: 12, name: "Telegram Bots", icon: <FaTelegramPlane className="text-4xl" /> },
   ];
 
   const navProperties = {
@@ -100,6 +111,12 @@ export default function VideoCreater() {
         return <GeneratorsArea onBack={() => updatePage(null)} />;
       case 9:
         return <StockArea onBack={() => updatePage(null)} />;
+      case 10:
+        return <AdvertisementArea onBack={() => updatePage(null)} />;
+      case 11:
+        return <PromptArea onBack={() => updatePage(null)} />;
+      case 12:
+        return <TelegramBotArea onBack={() => updatePage(null)} />;
       case 71:
         return <VideoSettingArea onBack={() => updatePage(7)} />;
       case 72:
@@ -116,10 +133,16 @@ export default function VideoCreater() {
         return <NewsImageArea onBack={() => updatePage(7)} />;
       case 78:
         return <NewsTextSoundArea onBack={() => updatePage(7)} />;
+      case 79:
+        return <TtsSoundArea onBack={() => updatePage(7)} />;
       case 91:
         return <StockGroupArea onBack={() => updatePage(9)} />;
       case 92:
         return <SingleStockArea onBack={() => updatePage(9)} />;
+      case 101:
+        return <AdvertisementGroupArea onBack={() => updatePage(10)} />;
+      case 102:
+        return <ContentAdvertisementArea onBack={() => updatePage(10)} />;
       default:
         return (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

@@ -3,7 +3,7 @@ import {
   MdArrowBack, MdRefresh, MdDelete, MdEdit, MdClose, 
   MdCheckCircle, MdHourglassEmpty, MdLayers, 
   MdEvent, MdCampaign, MdRocketLaunch, MdAdd, MdTaskAlt,
-  MdContentCopy
+  MdContentCopy, MdVisibility
 } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
 import VideoContext from "../../../contexts/VideoCreater/Videos/VideoContext";
@@ -12,7 +12,7 @@ import NotificationContext from "../../../contexts/Notification/NotificationCont
 
 export default function VideoArea({ onBack }) {
   const { notifySuccess } = useContext(NotificationContext);
-  const { videoList, pendingVideosCount, fetchVideos, addVideo, updateVideo, deleteVideo } = useContext(VideoContext);
+  const { videoList, pendingVideosCount, fetchVideos, addVideo, updateVideo, deleteVideo, getAudioUrl } = useContext(VideoContext);
   const { groups } = useContext(StockContext);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -247,6 +247,9 @@ export default function VideoArea({ onBack }) {
                     >
                         <MdContentCopy size={16} />
                     </button>
+                    { v.videoMultiMediaKey && <a href={getAudioUrl(v.videoMultiMediaKey)} target="_blank" rel="noreferrer" className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition">
+                      <MdVisibility size={18} />
+                    </a> }
                     <button 
                       onClick={() => startEdit(v)} 
                       title="Edit"

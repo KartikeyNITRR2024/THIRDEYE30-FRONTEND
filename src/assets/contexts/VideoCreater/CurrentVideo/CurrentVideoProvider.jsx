@@ -61,7 +61,7 @@ export default function CurrentVideoProvider({ children }) {
 
   useEffect(() => {
     // If navigating to page 4, fetch data
-    if (page === 4) {
+    if (page === 4 || page === 5) {
       fetchCurrentVideo();
     } else {
       // Clear state when leaving the page to prevent stale data

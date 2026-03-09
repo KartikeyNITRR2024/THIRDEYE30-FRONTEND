@@ -38,8 +38,12 @@ import ContentVideoProvider from "./assets/contexts/VideoCreater/ContentVideo/Co
 import HeaderProvider from "./assets/contexts/VideoCreater/Header/HeaderProvider";
 import StockRaceProvider from "./assets/contexts/VideoCreater/StockRace/StockRaceProvider";
 import NewsImageProvider from "./assets/contexts/VideoCreater/NewsImage/NewsImageProvider";
-import NewsTextSoundProvider from "./assets/contexts/VideoCreater/NewsTextSound/NewsTextSoundProvider"; 
-
+import NewsTextSoundProvider from "./assets/contexts/VideoCreater/NewsTextSound/NewsTextSoundProvider";
+import PromptProvider from "./assets/contexts/VideoCreater/Prompt/PromptProvider";
+import TelegramBotProvider from "./assets/contexts/VideoCreater/TelegramBot/TelegramBotProvider";
+import TtsSoundProvider from "./assets/contexts/VideoCreater/TtsSound/TtsSoundProvider";
+import AdvertisementProvider from "./assets/contexts/VideoCreater/Advertisement/AdvertisementProvider";
+import ContentAdvertisementProvider from "./assets/contexts/VideoCreater/ContentAdvertisement/ContentAdvertisementProvider";
 function App() {
   return (
     <Routes>
@@ -96,7 +100,17 @@ export default function AppWrapper() {
                                                               <StockRaceProvider>
                                                                 <NewsImageProvider>
                                                                   <NewsTextSoundProvider>
-                                                                    <App />
+                                                                    <TelegramBotProvider>
+                                                                      <PromptProvider>
+                                                                        <TtsSoundProvider>
+                                                                          <AdvertisementProvider> 
+                                                                            <ContentAdvertisementProvider>
+                                                                              <App />
+                                                                            </ContentAdvertisementProvider>
+                                                                          </AdvertisementProvider>
+                                                                        </TtsSoundProvider>
+                                                                      </PromptProvider>
+                                                                    </TelegramBotProvider>
                                                                   </NewsTextSoundProvider>
                                                                 </NewsImageProvider>
                                                               </StockRaceProvider>

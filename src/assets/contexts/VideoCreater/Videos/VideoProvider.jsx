@@ -12,11 +12,19 @@ export default function VideoProvider({ children }) {
   const [videoList, setVideoList] = useState([]);
   const api = new ApiCaller();
 
-  // Standardized header helper
   const getHeaders = () => ({
     "Content-Type": "application/json",
     token: userDetails.token,
   });
+
+  const getBase = () => {
+    return typeof api.getBaseUrl === 'function' ? api.getBaseUrl() : "http://localhost:8080/";
+  };
+
+  const getAudioUrl = (uuid) => {
+    if (!uuid) return "";
+    return `${getBase()}vm2/multimedia/view/${uuid}`;
+  };
 
   // Calculate pending items for the UI
   const pendingVideosCount = useMemo(() => {
@@ -128,7 +136,8 @@ export default function VideoProvider({ children }) {
       fetchVideos, 
       addVideo, 
       updateVideo, 
-      deleteVideo 
+      deleteVideo,
+      getAudioUrl 
     }}>
       {children}
     </VideoContext.Provider>
