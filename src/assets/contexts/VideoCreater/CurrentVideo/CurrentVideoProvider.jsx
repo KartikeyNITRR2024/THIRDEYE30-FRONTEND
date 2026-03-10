@@ -17,9 +17,10 @@ export default function CurrentVideoProvider({ children }) {
     token: userDetails.token,
   });
 
-  const fetchCurrentVideo = useCallback(async (silent = false) => {
+  // GET - Standardized: No silent refresh, handles backend error messages
+  const fetchCurrentVideo = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Active Video...");
     
     try {
       const { data } = await api.call("vm2/current-video", {
@@ -28,19 +29,22 @@ export default function CurrentVideoProvider({ children }) {
       });
       if (data.success) {
         setCurrentVideo(data.response);
+      } else {
+        await notifyError(data.errorMessage || "Failed to fetch active video");
       }
     } catch (err) {
-      if (!silent) notifyError("Failed to fetch active video");
+      notifyError("Network error: Could not load active video");
       console.error("Current video fetch failed", err);
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
+  // UPDATE
   const updateCurrentVideo = async (videoId) => {
     if (!userDetails?.token || !videoId) return;
     
-    notifyLoading();
+    notifyLoading("Updating Selection...");
     try {
       const { data } = await api.call(`vm2/current-video/${videoId}`, {
         method: "PUT",
@@ -51,16 +55,18 @@ export default function CurrentVideoProvider({ children }) {
         setCurrentVideo(data.response);
         notifySuccess("Active Video Updated Successfully");
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Failed to update active video");
       }
     } catch (err) {
-      notifyError("Failed to update active video");
+      notifyError("Service error: Failed to update active video");
     } finally {
       closeLoading();
     }
   };
 
   useEffect(() => {
-    // If navigating to page 4, fetch data
+    // If navigating to page 4 or 5, fetch data
     if (page === 4 || page === 5) {
       fetchCurrentVideo();
     } else {

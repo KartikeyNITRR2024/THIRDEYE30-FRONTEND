@@ -8,30 +8,40 @@ import PageContext from "../../VideoCreater/Page/PageContext";
 export default function OutroVideoProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Standardized custom confirmation
+  } = useContext(NotificationContext);
   
   const [outros, setOutros] = useState([]);
   const api = new ApiCaller();
 
   const getHeaders = () => ({ "Content-Type": "application/json", token: userDetails.token });
 
-  const fetchOutros = useCallback(async (silent = false) => {
+  // GET ALL - Standardized: No silent refresh, captures backend errors
+  const fetchOutros = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Loading Outro Templates...");
     try {
       const { data } = await api.call("vm2/outro-video", { method: "GET", headers: getHeaders() });
       if (data.success) {
         setOutros(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Fetch Outros Failed");
       }
     } catch { 
-      if (!silent) notifyError("Fetch Outros Failed"); 
+      notifyError("Network error: Failed to load outros"); 
     } finally { 
-      if (!silent) closeLoading(); 
+      closeLoading(); 
     }
   }, [userDetails?.token]);
 
+  // CREATE
   const createOutro = async (dto) => {
-    notifyLoading();
+    notifyLoading("Creating Outro...");
     try {
       const { data } = await api.call("vm2/outro-video", { 
         method: "POST", 
@@ -40,18 +50,21 @@ export default function OutroVideoProvider({ children }) {
       });
       if (data.success) { 
         notifySuccess("Outro Created Successfully"); 
-        await fetchOutros(true); 
+        await fetchOutros(); // Full refresh for UI transparency
         return true; 
+      } else {
+        await notifyError(data.errorMessage || "Outro Creation Failed");
       }
     } catch { 
-      notifyError("Outro Creation Failed"); 
+      notifyError("Service error: Outro Creation Failed"); 
     } finally { 
       closeLoading(); 
     }
   };
 
+  // UPDATE
   const updateOutro = async (id, dto) => {
-    notifyLoading();
+    notifyLoading("Saving Outro Changes...");
     try {
       const { data } = await api.call(`vm2/outro-video/${id}`, { 
         method: "PUT", 
@@ -60,49 +73,60 @@ export default function OutroVideoProvider({ children }) {
       });
       if (data.success) { 
         notifySuccess("Outro Updated Successfully"); 
-        await fetchOutros(true); 
+        await fetchOutros(); // Full refresh
         return true; 
+      } else {
+        await notifyError(data.errorMessage || "Outro Update Failed");
       }
     } catch { 
-      notifyError("Outro Update Failed"); 
+      notifyError("Service error: Outro Update Failed"); 
     } finally { 
       closeLoading(); 
     }
   };
 
+  // DELETE - Updated with notifyConfirm and data.errorMessage
   const deleteOutro = async (id) => {
-    if(!window.confirm("Delete this outro template?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Are you sure you want to delete this outro template?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Outro...");
     try {
       const { data } = await api.call(`vm2/outro-video/${id}`, { method: "DELETE", headers: getHeaders() });
       if (data.success) {
         notifySuccess("Outro Deleted Successfully");
-        await fetchOutros(true);
+        await fetchOutros(); // Full refresh
+      } else {
+        await notifyError(data.errorMessage || "Outro Delete Failed");
       }
     } catch { 
-      notifyError("Outro Delete Failed"); 
+      notifyError("Service error: Outro Delete Failed"); 
     } finally { 
       closeLoading(); 
     }
   };
 
+  // ACTIVATE
   const activateOutro = async (id) => {
-    notifyLoading();
+    notifyLoading("Activating Template...");
     try {
       const { data } = await api.call(`vm2/outro-video/${id}/activate`, { method: "PATCH", headers: getHeaders() });
       if (data.success) {
         notifySuccess("Outro Template Activated Successfully");
-        await fetchOutros(true);
+        await fetchOutros(); // Full refresh
+      } else {
+        await notifyError(data.errorMessage || "Activation Failed");
       }
     } catch { 
-      notifyError("Activation Failed"); 
+      notifyError("Service error: Activation Failed"); 
     } finally {
       closeLoading();
     }
   };
 
   useEffect(() => {
-    // Assuming page 73 is for Outros (Intro was 72)
     if ([73].includes(page)) { 
       fetchOutros(); 
     } else {

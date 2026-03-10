@@ -8,7 +8,14 @@ import PageContext from "../../VideoCreater/Page/PageContext";
 export default function TelegramBotProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Standardized custom confirmation
+  } = useContext(NotificationContext);
+  
   const [botList, setBotList] = useState([]);
   const api = new ApiCaller();
 
@@ -17,10 +24,10 @@ export default function TelegramBotProvider({ children }) {
     token: userDetails.token,
   });
 
-  // FETCH ALL BOTS
-  const fetchBots = useCallback(async (silent = false) => {
+  // FETCH ALL BOTS - Standardized: No silent refresh, captures backend errors
+  const fetchBots = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Telegram Bots...");
     try {
       const { data } = await api.call("vm2/telegram-bots", {
         method: "GET",
@@ -28,17 +35,19 @@ export default function TelegramBotProvider({ children }) {
       });
       if (data.success) {
         setBotList(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Failed to fetch bots");
       }
     } catch (err) {
-      if (!silent) notifyError("Failed to fetch bots");
+      notifyError("Network error: Could not reach bot service");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // ADD BOT
   const addBot = async (botData) => {
-    notifyLoading();
+    notifyLoading("Registering Bot...");
     try {
       const { data } = await api.call("vm2/telegram-bots", {
         method: "POST",
@@ -47,19 +56,21 @@ export default function TelegramBotProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Bot Registered Successfully");
-        await fetchBots(true);
+        await fetchBots(); // Full refresh for UI transparency
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Bot Registration Failed");
       }
     } catch {
-      notifyError("Bot Registration Failed");
+      notifyError("Service error: Registration Failed");
     } finally {
       closeLoading();
     }
   };
 
-  // UPDATE BOT (Added logic)
+  // UPDATE BOT
   const updateBot = async (id, botData) => {
-    notifyLoading();
+    notifyLoading("Updating Bot Configuration...");
     try {
       const { data } = await api.call(`vm2/telegram-bots/${id}`, {
         method: "PUT",
@@ -68,50 +79,63 @@ export default function TelegramBotProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Bot Configuration Updated");
-        // Update local state and refresh
-        setBotList(prev => prev.map(b => b.id === id ? { ...b, ...botData } : b));
-        await fetchBots(true);
+        await fetchBots(); // Standardized full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Update Failed");
       }
     } catch {
-      notifyError("Update Failed");
+      notifyError("Service error: Update Failed");
     } finally {
       closeLoading();
     }
   };
 
-  // TOGGLE STATUS (Activate/Deactivate)
+  // TOGGLE STATUS
   const toggleBotStatus = async (id, currentStatus) => {
+    const action = currentStatus ? "Deactivating" : "Activating";
     const endpoint = currentStatus ? "deactivate" : "activate";
+    
+    notifyLoading(`${action} Bot...`);
     try {
       const { data } = await api.call(`vm2/telegram-bots/${id}/${endpoint}`, {
         method: "PATCH",
         headers: getHeaders(),
       });
       if (data.success) {
-        setBotList(prev => prev.map(b => b.id === id ? { ...b, active: !currentStatus } : b));
         notifySuccess(`Bot ${currentStatus ? 'Deactivated' : 'Activated'}`);
+        await fetchBots();
+      } else {
+        await notifyError(data.errorMessage || "Status Update Failed");
       }
     } catch {
-      notifyError("Status Update Failed");
+      notifyError("Service error: Status Update Failed");
+    } finally {
+      closeLoading();
     }
   };
 
-  // DELETE BOT
+  // DELETE BOT - Updated with notifyConfirm
   const deleteBot = async (id) => {
-    if (!window.confirm("Delete this bot configuration?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Are you sure you want to delete this bot configuration?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Bot...");
     try {
       const { data } = await api.call(`vm2/telegram-bots/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
       if (data.success) {
-        setBotList(prev => prev.filter(b => b.id !== id));
         notifySuccess("Bot Deleted");
+        await fetchBots();
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
     } catch {
-      notifyError("Delete Failed");
+      notifyError("Service error: Delete Failed");
     } finally {
       closeLoading();
     }
@@ -123,7 +147,7 @@ export default function TelegramBotProvider({ children }) {
     } else {
       setBotList([]);
     }
-  }, [page]);
+  }, [page, fetchBots]);
 
   return (
     <TelegramBotContext.Provider value={{ 

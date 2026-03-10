@@ -8,7 +8,14 @@ import PageContext from "../Page/PageContext";
 export default function TtsSoundProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Standardized custom confirmation
+  } = useContext(NotificationContext);
+  
   const [soundList, setSoundList] = useState([]);
   const api = new ApiCaller();
 
@@ -23,38 +30,37 @@ export default function TtsSoundProvider({ children }) {
    */
   const sortVoices = (list) => {
     return [...list].sort((a, b) => {
-      // If one is active and the other isn't, active wins
       if (a.active !== b.active) {
         return a.active ? -1 : 1;
       }
-      // If both have same active status, sort by last used date
       return new Date(b.lastlyUsed) - new Date(a.lastlyUsed);
     });
   };
 
-  // GET ALL
-  const fetchSounds = useCallback(async (silent = false) => {
+  // GET ALL - Standardized: No silent refresh, captures backend errors
+  const fetchSounds = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Voice Library...");
     try {
       const { data } = await api.call("vm2/tts-sounds", {
         method: "GET",
         headers: getHeaders(),
       });
       if (data.success) {
-        // Apply sorting here
         setSoundList(sortVoices(data.response || []));
+      } else {
+        await notifyError(data.errorMessage || "Failed to load voices");
       }
     } catch (err) {
-      if (!silent) notifyError("Failed to load voices");
+      notifyError("Network error: Could not reach voice service");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // CREATE
   const addSound = async (soundData) => {
-    notifyLoading();
+    notifyLoading("Adding New Voice...");
     try {
       const { data } = await api.call("vm2/tts-sounds", {
         method: "POST",
@@ -63,16 +69,21 @@ export default function TtsSoundProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Voice Created");
-        await fetchSounds(true);
+        await fetchSounds(); // Full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Creation Failed");
       }
-    } catch { notifyError("Creation Failed"); } 
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Creation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   // UPDATE
   const updateSound = async (id, soundData) => {
-    notifyLoading();
+    notifyLoading("Updating Voice Settings...");
     try {
       const { data } = await api.call(`vm2/tts-sounds/${id}`, {
         method: "PUT",
@@ -81,51 +92,72 @@ export default function TtsSoundProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Voice Updated");
-        await fetchSounds(true);
+        await fetchSounds(); // Full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Update Failed");
       }
-    } catch { notifyError("Update Failed"); }
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Update Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
-  // TOGGLE STATUS (Active/Inactive)
+  // TOGGLE STATUS
   const toggleSoundStatus = async (id, currentStatus) => {
     const newStatus = !currentStatus;
+    notifyLoading(newStatus ? "Activating Voice..." : "Deactivating Voice...");
     try {
       const { data } = await api.call(`vm2/tts-sounds/${id}/${newStatus}`, {
         method: "PATCH",
         headers: getHeaders(),
       });
       if (data.success) {
-        // Update local state and re-sort so the item moves position if needed
-        setSoundList(prev => {
-          const updatedList = prev.map(s => s.id === id ? { ...s, active: newStatus } : s);
-          return sortVoices(updatedList);
-        });
         notifySuccess(newStatus ? "Voice Activated" : "Voice Deactivated");
+        await fetchSounds(); // Standardized full refresh ensures sorting is applied
+      } else {
+        await notifyError(data.errorMessage || "Status Update Failed");
       }
-    } catch { notifyError("Status Update Failed"); }
+    } catch { 
+      notifyError("Service error: Status Update Failed"); 
+    } finally {
+      closeLoading();
+    }
   };
 
-  // DELETE
+  // DELETE - Updated with notifyConfirm
   const deleteSound = async (id) => {
-    if (!window.confirm("Permanent delete this voice?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Permanently delete this voice configuration?");
+    if (!ok) return;
+
+    notifyLoading("Removing Voice...");
     try {
       const { data } = await api.call(`vm2/tts-sounds/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
       if (data.success) {
-        setSoundList(prev => prev.filter(s => s.id !== id));
         notifySuccess("Voice Removed");
+        await fetchSounds();
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
-    } catch { notifyError("Delete Failed"); }
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   useEffect(() => {
-    if (page === 79) fetchSounds();
+    if (page === 79) {
+      fetchSounds();
+    } else {
+      setSoundList([]);
+    }
   }, [page, fetchSounds]);
 
   return (

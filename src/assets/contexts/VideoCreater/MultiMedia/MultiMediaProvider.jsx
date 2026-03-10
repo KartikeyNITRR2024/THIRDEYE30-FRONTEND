@@ -8,7 +8,13 @@ import PageContext from "../Page/PageContext";
 export default function MultiMediaProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess, 
+    notifyConfirm // Use custom confirmation
+  } = useContext(NotificationContext);
   
   const [mediaList, setMediaList] = useState([]);
   const [todayMedia, setTodayMedia] = useState([]);
@@ -18,10 +24,10 @@ export default function MultiMediaProvider({ children }) {
     token: userDetails.token 
   });
 
-  // GET: All Multimedia
-  const fetchMedia = useCallback(async (silent = false) => {
+  // GET: All Multimedia - Removed silent logic
+  const fetchMedia = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Media Library...");
     try {
       const { data } = await api.call("vm2/multimedia", { 
         method: "GET", 
@@ -29,18 +35,20 @@ export default function MultiMediaProvider({ children }) {
       });
       if (data.success) {
         setMediaList(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Fetch Media List Failed");
       }
     } catch { 
-      if (!silent) notifyError("Fetch Media List Failed"); 
+      notifyError("Network error: Failed to fetch media list"); 
     } finally { 
-      if (!silent) closeLoading(); 
+      closeLoading(); 
     }
   }, [userDetails?.token]);
 
-  // GET: Today's Multimedia
-  const fetchTodayMedia = useCallback(async (silent = true) => {
+  // GET: Today's Multimedia - Removed silent logic
+  const fetchTodayMedia = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Loading Recent Media...");
     try {
       const { data } = await api.call("vm2/multimedia/today", { 
         method: "GET", 
@@ -48,31 +56,35 @@ export default function MultiMediaProvider({ children }) {
       });
       if (data.success) {
         setTodayMedia(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Fetch Today's Media Failed");
       }
     } catch { 
-      if (!silent) notifyError("Fetch Today's Media Failed");
+      notifyError("Network error: Failed to fetch recent media");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // POST: Upload Media
   const uploadMedia = async (formData) => {
-    notifyLoading();
+    notifyLoading("Uploading Asset...");
     try {
       const { data } = await api.call("vm2/multimedia/upload", { 
         method: "POST", 
-        headers: { token: userDetails.token }, // Note: No 'Content-Type' for FormData
+        headers: { token: userDetails.token }, 
         body: formData 
       });
       if (data.success) { 
         notifySuccess("Media Uploaded Successfully"); 
-        await fetchMedia(true); 
-        await fetchTodayMedia(true);
+        await fetchMedia(); 
+        await fetchTodayMedia();
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Upload Failed");
       }
     } catch { 
-      notifyError("Upload Failed"); 
+      notifyError("Service error: Upload Failed"); 
     } finally { 
       closeLoading(); 
     }
@@ -81,7 +93,7 @@ export default function MultiMediaProvider({ children }) {
   // GET: Media Info by Key
   const getMediaInfo = async (key) => {
     if (!key) return null;
-    notifyLoading(); // Info fetch usually needs feedback if triggered by a button
+    notifyLoading("Retrieving Media Info...");
     try {
       const { data } = await api.call(`vm2/multimedia/info/${key}`, { 
         method: "GET", 
@@ -89,19 +101,25 @@ export default function MultiMediaProvider({ children }) {
       });
       if (data.success) {
         return data.response;
+      } else {
+        await notifyError(data.errorMessage || "Failed to Retrieve Media Info");
       }
     } catch { 
-      notifyError("Failed to Retrieve Media Info"); 
+      notifyError("Network error: Failed to fetch info"); 
     } finally {
-        closeLoading();
+      closeLoading();
     }
     return null;
   };
 
-  // DELETE: Remove Asset
+  // DELETE: Remove Asset - Updated with notifyConfirm and data.errorMessage
   const deleteMedia = async (id) => {
-    if(!window.confirm("Delete this multimedia asset?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Are you sure you want to delete this multimedia asset?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Asset...");
     try {
       const { data } = await api.call(`vm2/multimedia/${id}`, { 
         method: "DELETE", 
@@ -109,11 +127,13 @@ export default function MultiMediaProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Asset Deleted Successfully");
-        await fetchMedia(true);
-        await fetchTodayMedia(true);
+        await fetchMedia();
+        await fetchTodayMedia();
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
     } catch { 
-      notifyError("Delete Failed"); 
+      notifyError("Service error: Delete Failed"); 
     } finally { 
       closeLoading(); 
     }
@@ -121,6 +141,7 @@ export default function MultiMediaProvider({ children }) {
 
   useEffect(() => {
     if ([1].includes(page)) { 
+      // Synchronous looking calls but both will trigger loading sequentially or overlapped
       fetchMedia();
       fetchTodayMedia();
     } else {

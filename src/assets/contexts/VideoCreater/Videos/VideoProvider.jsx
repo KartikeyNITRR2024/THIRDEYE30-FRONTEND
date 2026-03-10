@@ -8,7 +8,14 @@ import PageContext from "../../VideoCreater/Page/PageContext";
 export default function VideoProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Standardized custom confirmation
+  } = useContext(NotificationContext);
+  
   const [videoList, setVideoList] = useState([]);
   const api = new ApiCaller();
 
@@ -26,38 +33,39 @@ export default function VideoProvider({ children }) {
     return `${getBase()}vm2/multimedia/view/${uuid}`;
   };
 
-  // Calculate pending items for the UI
+  // UI Helper: Calculate pending items
   const pendingVideosCount = useMemo(() => {
     return videoList.filter(v => !v.isCompleted).length;
   }, [videoList]);
 
-  // FETCH ALL VIDEOS
-  const fetchVideos = useCallback(async (silent = false) => {
+  // FETCH ALL - Standardized: No silent refresh, captures backend errors
+  const fetchVideos = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Video Queue...");
     try {
       const { data } = await api.call("vm2/videos", {
         method: "GET",
         headers: getHeaders(),
       });
       if (data.success) {
-        // Sort descending by createdDateTime
         const sorted = (data.response || []).sort((a, b) => 
           new Date(b.createdDateTime) - new Date(a.createdDateTime)
         );
         setVideoList(sorted);
+      } else {
+        await notifyError(data.errorMessage || "Failed to fetch videos");
       }
     } catch (err) {
-      if (!silent) notifyError("Failed to fetch videos");
+      notifyError("Network error: Could not reach video service");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // ADD VIDEO
   const addVideo = async (videoData) => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    notifyLoading("Initializing Video Generation...");
     try {
       const { data } = await api.call("vm2/videos", {
         method: "POST",
@@ -66,11 +74,13 @@ export default function VideoProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Created Successfully");
-        await fetchVideos(true);
+        await fetchVideos(); // Full refresh for UI transparency
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Video Creation Failed");
       }
     } catch {
-      notifyError("Video Creation Failed");
+      notifyError("Service error: Video Creation Failed");
     } finally {
       closeLoading();
     }
@@ -79,7 +89,7 @@ export default function VideoProvider({ children }) {
   // UPDATE VIDEO
   const updateVideo = async (id, videoData) => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    notifyLoading("Updating Video Settings...");
     try {
       const { data } = await api.call(`vm2/videos/${id}`, {
         method: "PUT",
@@ -88,34 +98,40 @@ export default function VideoProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Updated Successfully");
-        await fetchVideos(true);
+        await fetchVideos(); // Full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Video Update Failed");
       }
     } catch {
-      notifyError("Video Update Failed");
+      notifyError("Service error: Video Update Failed");
       return false;
     } finally {
       closeLoading();
     }
   };
 
-  // DELETE VIDEO
+  // DELETE VIDEO - Updated with notifyConfirm
   const deleteVideo = async (id) => {
-    if (!userDetails?.token) return;
-    if (!window.confirm("Are you sure you want to delete this video?")) return;
+    if (!userDetails?.token || !id) return;
 
-    notifyLoading();
+    const ok = await notifyConfirm("Are you sure you want to delete this video? This cannot be undone.");
+    if (!ok) return;
+
+    notifyLoading("Removing Video...");
     try {
       const { data } = await api.call(`vm2/videos/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
       if (data.success) {
-        setVideoList(prev => prev.filter(v => v.id !== id));
         notifySuccess("Video Deleted Successfully");
+        await fetchVideos(); // Ensure list is 100% accurate
+      } else {
+        await notifyError(data.errorMessage || "Video Delete Failed");
       }
     } catch {
-      notifyError("Video Delete Failed");
+      notifyError("Service error: Delete Failed");
     } finally {
       closeLoading();
     }

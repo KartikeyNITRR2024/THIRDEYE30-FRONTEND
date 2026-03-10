@@ -8,76 +8,130 @@ import PageContext from "../../VideoCreater/Page/PageContext";
 export default function StockRaceProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Use custom confirmation
+  } = useContext(NotificationContext);
   
   const [stockRaces, setStockRaces] = useState([]);
   const api = new ApiCaller();
 
   const getHeaders = () => ({ "Content-Type": "application/json", token: userDetails.token });
 
-  const fetchStockRaces = useCallback(async (silent = false) => {
+  // GET ALL - Standardized: No silent refresh, captures backend errors
+  const fetchStockRaces = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Race Styles...");
     try {
       const { data } = await api.call("vm2/stock-race", { method: "GET", headers: getHeaders() });
-      if (data.success) setStockRaces(data.response || []);
+      if (data.success) {
+        setStockRaces(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Fetch Stock Races Failed");
+      }
     } catch { 
-      if (!silent) notifyError("Fetch Stock Races Failed"); 
+      notifyError("Network error: Failed to fetch race styles"); 
     } finally { 
-      if (!silent) closeLoading(); 
+      closeLoading(); 
     }
   }, [userDetails?.token]);
 
+  // CREATE
   const createStockRace = async (dto) => {
-    notifyLoading();
+    notifyLoading("Creating Stock Race Style...");
     try {
-      const { data } = await api.call("vm2/stock-race", { method: "POST", headers: getHeaders(), body: JSON.stringify(dto) });
+      const { data } = await api.call("vm2/stock-race", { 
+        method: "POST", 
+        headers: getHeaders(), 
+        body: JSON.stringify(dto) 
+      });
       if (data.success) { 
         notifySuccess("Stock Race Style Created"); 
-        await fetchStockRaces(true); 
+        await fetchStockRaces(); // Full refresh
         return true; 
+      } else {
+        await notifyError(data.errorMessage || "Creation Failed");
       }
-    } catch { notifyError("Creation Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Creation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
+  // UPDATE
   const updateStockRace = async (id, dto) => {
-    notifyLoading();
+    notifyLoading("Saving Race Configuration...");
     try {
-      const { data } = await api.call(`vm2/stock-race/${id}`, { method: "PUT", headers: getHeaders(), body: JSON.stringify(dto) });
+      const { data } = await api.call(`vm2/stock-race/${id}`, { 
+        method: "PUT", 
+        headers: getHeaders(), 
+        body: JSON.stringify(dto) 
+      });
       if (data.success) { 
         notifySuccess("Stock Race Updated"); 
-        await fetchStockRaces(true); 
+        await fetchStockRaces(); // Full refresh
         return true; 
+      } else {
+        await notifyError(data.errorMessage || "Update Failed");
       }
-    } catch { notifyError("Update Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Update Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
+  // DELETE - Updated with notifyConfirm and data.errorMessage
   const deleteStockRace = async (id) => {
-    if(!window.confirm("Delete this Stock Race configuration?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Delete this Stock Race configuration?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Race Style...");
     try {
       const { data } = await api.call(`vm2/stock-race/${id}`, { method: "DELETE", headers: getHeaders() });
       if (data.success) {
         notifySuccess("Stock Race Deleted");
-        await fetchStockRaces(true);
+        await fetchStockRaces(); // Full refresh
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
-    } catch { notifyError("Delete Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
+  // ACTIVATE
   const activateStockRace = async (id) => {
-    notifyLoading();
+    notifyLoading("Activating Race Style...");
     try {
       const { data } = await api.call(`vm2/stock-race/${id}/activate`, { method: "PATCH", headers: getHeaders() });
       if (data.success) {
         notifySuccess("Stock Race Activated");
-        await fetchStockRaces(true);
+        await fetchStockRaces(); // Full refresh
+      } else {
+        await notifyError(data.errorMessage || "Activation Failed");
       }
-    } catch { notifyError("Activation Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Activation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   useEffect(() => {
-    // Assuming Page 76 for Stock Race
-    if ([76].includes(page)) fetchStockRaces();
+    if ([76].includes(page)) {
+      fetchStockRaces();
+    } else {
+      setStockRaces([]);
+    }
   }, [page, fetchStockRaces]);
 
   return (

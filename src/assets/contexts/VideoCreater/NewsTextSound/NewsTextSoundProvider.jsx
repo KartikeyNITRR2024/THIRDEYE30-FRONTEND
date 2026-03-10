@@ -8,75 +8,130 @@ import PageContext from "../../VideoCreater/Page/PageContext";
 export default function NewsTextSoundProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Use custom confirmation
+  } = useContext(NotificationContext);
   
   const [newsTextSounds, setNewsTextSounds] = useState([]);
   const api = new ApiCaller();
 
   const getHeaders = () => ({ "Content-Type": "application/json", token: userDetails.token });
 
-  const fetchNewsTextSounds = useCallback(async (silent = false) => {
+  // GET - Standardized: No silent refresh, handles backend error messages
+  const fetchNewsTextSounds = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Text Styles...");
     try {
       const { data } = await api.call("vm2/news-text-sound", { method: "GET", headers: getHeaders() });
-      if (data.success) setNewsTextSounds(data.response || []);
+      if (data.success) {
+        setNewsTextSounds(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Fetch News Text Styles Failed");
+      }
     } catch { 
-      if (!silent) notifyError("Fetch News Text Styles Failed"); 
+      notifyError("Network error: Failed to load text styles"); 
     } finally { 
-      if (!silent) closeLoading(); 
+      closeLoading(); 
     }
   }, [userDetails?.token]);
 
+  // CREATE
   const createNewsTextSound = async (dto) => {
-    notifyLoading();
+    notifyLoading("Creating News Style...");
     try {
-      const { data } = await api.call("vm2/news-text-sound", { method: "POST", headers: getHeaders(), body: JSON.stringify(dto) });
+      const { data } = await api.call("vm2/news-text-sound", { 
+        method: "POST", 
+        headers: getHeaders(), 
+        body: JSON.stringify(dto) 
+      });
       if (data.success) { 
         notifySuccess("News Style Created"); 
-        await fetchNewsTextSounds(true); 
+        await fetchNewsTextSounds(); // Full refresh
         return true; 
+      } else {
+        await notifyError(data.errorMessage || "Creation Failed");
       }
-    } catch { notifyError("Creation Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Creation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
+  // UPDATE
   const updateNewsTextSound = async (id, dto) => {
-    notifyLoading();
+    notifyLoading("Saving News Style...");
     try {
-      const { data } = await api.call(`vm2/news-text-sound/${id}`, { method: "PUT", headers: getHeaders(), body: JSON.stringify(dto) });
+      const { data } = await api.call(`vm2/news-text-sound/${id}`, { 
+        method: "PUT", 
+        headers: getHeaders(), 
+        body: JSON.stringify(dto) 
+      });
       if (data.success) { 
         notifySuccess("News Style Updated"); 
-        await fetchNewsTextSounds(true); 
+        await fetchNewsTextSounds(); // Full refresh
         return true; 
+      } else {
+        await notifyError(data.errorMessage || "Update Failed");
       }
-    } catch { notifyError("Update Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Update Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
+  // DELETE - Updated with notifyConfirm and data.errorMessage
   const deleteNewsTextSound = async (id) => {
-    if(!window.confirm("Delete this news style configuration?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Are you sure you want to delete this news style configuration?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Style...");
     try {
       const { data } = await api.call(`vm2/news-text-sound/${id}`, { method: "DELETE", headers: getHeaders() });
       if (data.success) {
         notifySuccess("Style Deleted");
-        await fetchNewsTextSounds(true);
+        await fetchNewsTextSounds(); // Full refresh
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
-    } catch { notifyError("Delete Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
+  // ACTIVATE
   const activateNewsTextSound = async (id) => {
-    notifyLoading();
+    notifyLoading("Activating Style...");
     try {
       const { data } = await api.call(`vm2/news-text-sound/${id}/activate`, { method: "PATCH", headers: getHeaders() });
       if (data.success) {
         notifySuccess("Style Activated");
-        await fetchNewsTextSounds(true);
+        await fetchNewsTextSounds(); // Full refresh
+      } else {
+        await notifyError(data.errorMessage || "Activation Failed");
       }
-    } catch { notifyError("Activation Failed"); } finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Activation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   useEffect(() => {
-    if ([78].includes(page)) fetchNewsTextSounds(); // Assuming Page 78
+    if ([78].includes(page)) {
+      fetchNewsTextSounds();
+    } else {
+      setNewsTextSounds([]);
+    }
   }, [page, fetchNewsTextSounds]);
 
   return (

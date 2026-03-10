@@ -8,7 +8,14 @@ import PageContext from "../Page/PageContext";
 export default function AdvertisementProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess, 
+    notifyConfirm // Added notifyConfirm
+  } = useContext(NotificationContext);
+  
   const [adList, setAdList] = useState([]);
   const api = new ApiCaller();
 
@@ -24,26 +31,30 @@ export default function AdvertisementProvider({ children }) {
     });
   };
 
-  // GET ALL
-  const fetchAds = useCallback(async (silent = false) => {
+  // GET ALL - Removed silent logic, always shows loading
+  const fetchAds = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Fetching Advertisements...");
     try {
       const { data } = await api.call("vm2/advertisements", {
         method: "GET",
         headers: getHeaders(),
       });
-      if (data.success) setAdList(sortAds(data.response || []));
+      if (data.success) {
+        setAdList(sortAds(data.response || []));
+      } else {
+        await notifyError(data.errorMessage || "Failed to load ads");
+      }
     } catch (err) {
-      if (!silent) notifyError("Failed to load ads");
+      notifyError("Network error: Failed to fetch ads");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // CREATE
   const addAd = async (adData) => {
-    notifyLoading();
+    notifyLoading("Creating Ad Config...");
     try {
       const { data } = await api.call("vm2/advertisements", {
         method: "POST",
@@ -52,16 +63,21 @@ export default function AdvertisementProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Ad Config Created");
-        await fetchAds(true);
+        await fetchAds(); // Full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Creation Failed");
       }
-    } catch { notifyError("Creation Failed"); } 
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Creation Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   // UPDATE
   const updateAd = async (id, adData) => {
-    notifyLoading();
+    notifyLoading("Updating Ad Config...");
     try {
       const { data } = await api.call(`vm2/advertisements/${id}`, {
         method: "PUT",
@@ -70,32 +86,47 @@ export default function AdvertisementProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Ad Config Updated");
-        await fetchAds(true);
+        await fetchAds(); // Full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Update Failed");
       }
-    } catch { notifyError("Update Failed"); }
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Update Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
-  // TOGGLE STATUS (Uses your activate/deactivate endpoints)
+  // TOGGLE STATUS
   const toggleAdStatus = async (id, currentStatus) => {
-    const endpoint = currentStatus ? 'deactivate' : 'activate';
+    notifyLoading("Updating Status...");
     try {
-      const { data } = await api.call(`vm2/advertisements/${id}/${endpoint}`, {
+      const { data } = await api.call(`vm2/advertisements/${id}/${currentStatus ? 'deactivate' : 'activate'}`, {
         method: "PATCH",
         headers: getHeaders(),
       });
       if (data.success) {
         setAdList(prev => sortAds(prev.map(ad => ad.id === id ? { ...ad, active: !currentStatus } : ad)));
         notifySuccess(!currentStatus ? "Ad Activated" : "Ad Deactivated");
+      } else {
+        await notifyError(data.errorMessage || "Status Change Failed");
       }
-    } catch { notifyError("Status Change Failed"); }
+    } catch { 
+      notifyError("Service error: Status Change Failed"); 
+    } finally {
+      closeLoading();
+    }
   };
 
-  // DELETE
+  // DELETE - Updated with notifyConfirm and data.errorMessage logic
   const deleteAd = async (id) => {
-    if (!window.confirm("Delete this advertisement configuration?")) return;
-    notifyLoading();
+    if (!userDetails?.token || !id) return;
+
+    const ok = await notifyConfirm("Are you sure you want to delete this advertisement configuration?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Ad Config...");
     try {
       const { data } = await api.call(`vm2/advertisements/${id}`, {
         method: "DELETE",
@@ -104,13 +135,18 @@ export default function AdvertisementProvider({ children }) {
       if (data.success) {
         setAdList(prev => prev.filter(ad => ad.id !== id));
         notifySuccess("Ad Deleted");
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
-    } catch { notifyError("Delete Failed"); }
-    finally { closeLoading(); }
+    } catch { 
+      notifyError("Service error: Delete Failed"); 
+    } finally { 
+      closeLoading(); 
+    }
   };
 
   useEffect(() => {
-    if (page === 101) fetchAds();
+    if (page === 101 || page === 3) fetchAds();
   }, [page, fetchAds]);
 
   return (

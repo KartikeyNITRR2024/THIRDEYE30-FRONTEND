@@ -8,7 +8,14 @@ import PageContext from "../../VideoCreater/Page/PageContext";
 export default function AudioGeneratorProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess, 
+    notifyConfirm 
+  } = useContext(NotificationContext);
+  
   const [audioList, setAudioList] = useState([]);
   const api = new ApiCaller();
 
@@ -26,15 +33,14 @@ export default function AudioGeneratorProvider({ children }) {
     return `${getBase()}vm2/multimedia/view/${uuid}`;
   };
 
-  // Calculate pending items for the UI badge
   const pendingCount = useMemo(() => {
     return audioList.filter(item => !item.isAudioGenerated).length;
   }, [audioList]);
 
-  // GET ALL - Sorted by createdTime Descending
-  const fetchAudioList = useCallback(async (showLoading = true) => {
+  // GET ALL
+  const fetchAudioList = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (showLoading) notifyLoading();
+    notifyLoading("Syncing Audio Library...");
     
     try {
       const { data } = await api.call("vm2/audio-generate", {
@@ -47,32 +53,36 @@ export default function AudioGeneratorProvider({ children }) {
           new Date(b.createdTime) - new Date(a.createdTime)
         );
         setAudioList(sorted);
-        // We don't usually notifySuccess on simple fetches to avoid spamming the user
+      } else {
+        await notifyError(data.errorMessage || "Failed to load audio list");
       }
     } catch (err) {
-      if (showLoading) notifyError("Failed to fetch audio list");
+      notifyError("Network error: Could not reach the server");
     } finally {
-      if (showLoading) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // CREATE
   const addAudio = async (content, autoDelete) => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    notifyLoading("Initializing Generation...");
     try {
       const { data } = await api.call("vm2/audio-generate", {
         method: "POST",
         headers: getHeaders(),
         body: JSON.stringify({ content, autoDelete, isAudioGenerated: false }),
       });
+      
       if (data.success) {
-        notifySuccess("Audio Generation Started Successfully");
-        await fetchAudioList(false); // Silent refresh to update list
+        notifySuccess("Audio Generation Started");
+        await fetchAudioList(); // Refresh after creation
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Audio Creation Failed");
       }
     } catch {
-      notifyError("Audio Creation Failed");
+      notifyError("Service error: Audio Creation Failed");
     } finally {
       closeLoading();
     }
@@ -80,37 +90,33 @@ export default function AudioGeneratorProvider({ children }) {
 
   // DELETE
   const deleteAudio = async (id) => {
-    if (!userDetails?.token) return;
-    if (!window.confirm("Are you sure you want to delete this audio?")) return;
+    if (!userDetails?.token || !id) return;
     
-    notifyLoading();
+    // Custom confirmation dialog
+    const ok = await notifyConfirm("Are you sure you want to delete this audio?");
+    if (!ok) return;
+    
+    notifyLoading("Deleting Audio Asset...");
     try {
       const { data } = await api.call(`vm2/audio-generate/${id}`, {
         method: "DELETE",
         headers: getHeaders(),
       });
+      
       if (data.success) {
         setAudioList(prev => prev.filter(item => item.id !== id));
         notifySuccess("Audio Deleted Successfully");
+      } else {
+        await notifyError(data.errorMessage || "Audio Delete Failed");
       }
     } catch {
-      notifyError("Audio Delete Failed");
+      notifyError("Service error: Audio Delete Failed");
     } finally {
       closeLoading();
     }
   };
 
-  // Auto-Refresh Polling: Checks every 5s if items are pending
-  useEffect(() => {
-    let interval;
-    if (page === 2 && pendingCount > 0) {
-      interval = setInterval(() => {
-        fetchAudioList(false); // Silent refresh (no loading spinner)
-      }, 5000);
-    }
-    return () => clearInterval(interval);
-  }, [page, pendingCount, fetchAudioList]);
-
+  // Removed Polling Interval entirely
   useEffect(() => {
     if (page === 2) {
       fetchAudioList();

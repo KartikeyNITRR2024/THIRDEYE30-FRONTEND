@@ -26,10 +26,6 @@ export default function PageProvider({ children }) {
   }
 
   useEffect(() => {
-      console.log(page + " as");
-  }, [page]);
-
-  useEffect(() => {
       if (!login) {
         setPage(null);
         navigate("/");

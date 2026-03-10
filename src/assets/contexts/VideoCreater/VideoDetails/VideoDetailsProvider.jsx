@@ -8,7 +8,14 @@ import PageContext from "../Page/PageContext";
 export default function VideoDetailsProvider({ children }) {
   const { page } = useContext(PageContext);
   const { userDetails } = useContext(AuthContext);
-  const { notifyError, notifyLoading, closeLoading, notifySuccess } = useContext(NotificationContext);
+  const { 
+    notifyError, 
+    notifyLoading, 
+    closeLoading, 
+    notifySuccess,
+    notifyConfirm // Standardized custom confirmation
+  } = useContext(NotificationContext);
+  
   const [detailsList, setDetailsList] = useState([]);
   const api = new ApiCaller();
 
@@ -18,10 +25,10 @@ export default function VideoDetailsProvider({ children }) {
     token: userDetails.token,
   });
 
-  // FETCH ALL
-  const fetchAllDetails = useCallback(async (silent = false) => {
+  // FETCH ALL - Standardized: No silent refresh, captures backend errors
+  const fetchAllDetails = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    notifyLoading("Syncing Video Library...");
     try {
       const { data } = await api.call("vm2/video-details", {
         method: "GET",
@@ -29,18 +36,20 @@ export default function VideoDetailsProvider({ children }) {
       });
       if (data.success) {
         setDetailsList(data.response || []);
+      } else {
+        await notifyError(data.errorMessage || "Failed to Fetch Video Details");
       }
     } catch {
-      if (!silent) notifyError("Failed to Fetch Video Details");
+      notifyError("Network error: Could not reach video details service");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   // CREATE
   const createDetails = async (dto) => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    notifyLoading("Saving Video Details...");
     try {
       const { data } = await api.call("vm2/video-details", {
         method: "POST",
@@ -49,11 +58,13 @@ export default function VideoDetailsProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Details Saved Successfully");
-        await fetchAllDetails(true);
+        await fetchAllDetails(); // Full refresh for UI transparency
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Failed to Save Video Details");
       }
     } catch {
-      notifyError("Failed to Save Video Details");
+      notifyError("Service error: Save Failed");
     } finally {
       closeLoading();
     }
@@ -62,7 +73,7 @@ export default function VideoDetailsProvider({ children }) {
   // UPDATE
   const updateDetails = async (id, dto) => {
     if (!userDetails?.token) return;
-    notifyLoading();
+    notifyLoading("Updating Video Details...");
     try {
       const { data } = await api.call(`vm2/video-details/${id}`, {
         method: "PUT",
@@ -71,23 +82,28 @@ export default function VideoDetailsProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Details Updated Successfully");
-        await fetchAllDetails(true);
+        await fetchAllDetails(); // Full refresh
         return true;
+      } else {
+        await notifyError(data.errorMessage || "Update Failed");
+        return false;
       }
     } catch {
-      notifyError("Update Failed");
+      notifyError("Service error: Update Failed");
       return false;
     } finally {
       closeLoading();
     }
   };
 
-  // DELETE
+  // DELETE - Updated with notifyConfirm
   const deleteDetails = async (id) => {
-    if (!userDetails?.token) return;
-    if (!window.confirm("Are you sure you want to delete these video details?")) return;
+    if (!userDetails?.token || !id) return;
 
-    notifyLoading();
+    const ok = await notifyConfirm("Are you sure you want to delete these video details?");
+    if (!ok) return;
+
+    notifyLoading("Deleting Video Details...");
     try {
       const { data } = await api.call(`vm2/video-details/${id}`, {
         method: "DELETE",
@@ -96,16 +112,17 @@ export default function VideoDetailsProvider({ children }) {
       if (data.success) {
         setDetailsList(prev => prev.filter(d => d.id !== id));
         notifySuccess("Video Details Deleted Successfully");
+      } else {
+        await notifyError(data.errorMessage || "Delete Failed");
       }
     } catch {
-      notifyError("Delete Failed");
+      notifyError("Service error: Delete Failed");
     } finally {
       closeLoading();
     }
   };
 
   useEffect(() => {
-    // Triggers for pages 5 and 6
     if ([5, 6].includes(page)) {
       fetchAllDetails();
     } else {

@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useMemo } from "react";
 import { 
   MdArrowBack, MdRefresh, MdDelete, MdEdit, MdClose, 
   MdCheckCircle, MdHourglassEmpty, MdLayers, 
@@ -9,11 +9,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import VideoContext from "../../../contexts/VideoCreater/Videos/VideoContext";
 import StockContext from "../../../contexts/VideoCreater/Stock/StockContext";
 import NotificationContext from "../../../contexts/Notification/NotificationContext";
+import AdvertisementContext from "../../../contexts/VideoCreater/Advertisement/AdvertisementContext";
 
 export default function VideoArea({ onBack }) {
   const { notifySuccess } = useContext(NotificationContext);
   const { videoList, pendingVideosCount, fetchVideos, addVideo, updateVideo, deleteVideo, getAudioUrl } = useContext(VideoContext);
   const { groups } = useContext(StockContext);
+  
+  // 2. Consume Advertisement Context
+  const { adList } = useContext(AdvertisementContext);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -27,6 +31,11 @@ export default function VideoArea({ onBack }) {
     adsId: "",
     isCompleted: false
   });
+
+  // 3. Filter only active ads for the dropdown
+  const activeAds = useMemo(() => {
+    return (adList || []).filter(ad => ad.active);
+  }, [adList]);
 
   const openCreateModal = () => {
     resetForm();
@@ -59,7 +68,6 @@ export default function VideoArea({ onBack }) {
     setIsModalOpen(true);
   };
 
-  // Helper for copying UUID
   const copyToClipboard = (id) => {
     navigator.clipboard.writeText(id);
     notifySuccess("Task UUID Copied to Clipboard");
@@ -178,14 +186,40 @@ export default function VideoArea({ onBack }) {
                               <span className="text-[10px] font-black text-slate-700 uppercase">Ad Integration</span>
                               <span className="text-[8px] text-slate-400 font-bold uppercase tracking-tight">Monetization Sync</span>
                           </div>
-                          <input type="checkbox" className="w-5 h-5 accent-slate-800" checked={formData.adsPresent} onChange={e => setFormData({...formData, adsPresent: e.target.checked})} />
+                          {/* Updated Checkbox: Resets adsId if unchecked */}
+                          <input 
+                            type="checkbox" 
+                            className="w-5 h-5 accent-slate-800" 
+                            checked={formData.adsPresent} 
+                            onChange={e => setFormData({...formData, adsPresent: e.target.checked, adsId: e.target.checked ? formData.adsId : ""})} 
+                          />
                       </div>
                       <AnimatePresence>
                         {formData.adsPresent && (
-                            <motion.input 
-                              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                              type="text" placeholder="Ads System ID" className="w-full border-b bg-transparent mt-2 py-1 text-xs font-mono outline-none focus:border-blue-500" 
-                              value={formData.adsId} onChange={e => setFormData({...formData, adsId: e.target.value})} />
+                            <motion.div 
+                              initial={{ opacity: 0, height: 0 }} 
+                              animate={{ opacity: 1, height: 'auto' }} 
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-4 space-y-1"
+                            >
+                                <label className="text-[9px] font-black text-blue-600 uppercase ml-1">Advertisement Config</label>
+                                {/* NEW DROPDOWN INSTEAD OF TEXT INPUT */}
+                                <select 
+                                  className="w-full border-2 rounded-xl px-4 py-2 text-xs font-bold bg-white outline-none focus:border-blue-600 transition-colors"
+                                  value={formData.adsId} 
+                                  onChange={e => setFormData({...formData, adsId: e.target.value})}
+                               >
+                                    <option value="">Select Active Ad...</option>
+                                    {activeAds.map(ad => (
+                                      <option key={ad.id} value={ad.id}>
+                                        {ad.name.toUpperCase()}
+                                      </option>
+                                    ))}
+                                </select>
+                                {activeAds.length === 0 && (
+                                  <span className="text-[8px] text-rose-500 font-bold uppercase ml-1">No active ads available</span>
+                                )}
+                            </motion.div>
                         )}
                       </AnimatePresence>
                   </div>
@@ -225,7 +259,7 @@ export default function VideoArea({ onBack }) {
         )}
       </AnimatePresence>
 
-      {/* VIDEO LIST - Cards with Copy, Edit, Delete */}
+      {/* VIDEO LIST */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         {videoList.map((v) => {
           const groupName = v.stockGroup ? (groups.find(g => g.id === v.stockGroup)?.name || "DETACHED") : "NONE";
@@ -238,7 +272,6 @@ export default function VideoArea({ onBack }) {
                     <h4 className="font-black text-slate-800 uppercase text-xs mb-1 truncate">{v.name}</h4>
                     <span className="text-[8px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">{v.typeOfVideo}</span>
                 </div>
-                {/* ACTION BUTTONS */}
                 <div className="flex gap-0.5 sm:gap-1">
                     <button 
                       onClick={() => copyToClipboard(v.id)} 

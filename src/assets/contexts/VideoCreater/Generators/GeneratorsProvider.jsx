@@ -17,9 +17,11 @@ export default function GeneratorProvider({ children }) {
     token: userDetails.token,
   });
 
-  const fetchGeneratorsUrls = useCallback(async (silent = false) => {
+  // GET - Standardized: Removed silent refresh, strict error checking
+  const fetchGeneratorsUrls = useCallback(async () => {
     if (!userDetails?.token) return;
-    if (!silent) notifyLoading();
+    
+    notifyLoading("Syncing Generator Status...");
     
     try {
       const { data } = await api.call("vm2/content-generater", {
@@ -29,21 +31,24 @@ export default function GeneratorProvider({ children }) {
       
       if (data.success) {
         setGeneratorsUrls(data.response || []);
-        if (!silent) notifySuccess("Generator Links Synchronized");
+        notifySuccess("Generator Links Synchronized");
       } else {
-        notifyError(data.errorMessage || "Failed to fetch status checker link");
+        // Correctly handle backend error message
+        await notifyError(data.errorMessage || "Failed to fetch status checker link");
       }
     } catch (err) {
-      notifyError("Network error while fetching status check link");
+      notifyError("Network error: Could not reach generator service");
     } finally {
-      if (!silent) closeLoading();
+      closeLoading();
     }
   }, [userDetails?.token]);
 
   useEffect(() => {
+    // If navigating to page 8, fetch data
     if (page === 8) {
       fetchGeneratorsUrls();
     } else {
+      // Clear state when leaving the page
       setGeneratorsUrls([]);
     }
   }, [page, fetchGeneratorsUrls]);

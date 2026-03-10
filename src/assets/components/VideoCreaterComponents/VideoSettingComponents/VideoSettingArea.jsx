@@ -2,8 +2,7 @@ import { useContext, useState } from "react";
 import { 
   MdArrowBack, MdRefresh, MdEdit, MdDelete, MdCheckCircle, 
   MdRadioButtonUnchecked, MdClose, MdMusicNote, MdSettings, 
-  MdAdd, MdAspectRatio, MdSlowMotionVideo, MdDescription,
-  MdLayers, MdVolumeUp, MdTimer, MdGraphicEq
+  MdAdd, MdTimer, MdWaves // Added MdWaves for Timing Mode icon
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import VideoSettingContext from "../../../contexts/VideoCreater/VideoSetting/VideoSettingContext";
@@ -14,7 +13,6 @@ export default function VideoSettingArea({ onBack }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
   
-  // 100% COMPLETE DTO MAPPING (Logic preserved)
   const emptyForm = {
     id: null,
     name: null,
@@ -33,6 +31,7 @@ export default function VideoSettingArea({ onBack }) {
     isAudio: false,
     audioMultiMediaKey: null,
     audioVolumne: null,
+    audioTimingMode: "DYNAMIC", // New Field Added
     lastlyUsed: null 
   };
 
@@ -53,6 +52,7 @@ export default function VideoSettingArea({ onBack }) {
       height: formData.height ? parseInt(formData.height) : null,
       fps: formData.fps ? parseInt(formData.fps) : null,
       audioVolumne: formData.audioVolumne ? parseInt(formData.audioVolumne) : null,
+      // audioTimingMode is already a string "DYNAMIC" or "EQUAL"
     };
 
     if (editingId) {
@@ -104,20 +104,17 @@ export default function VideoSettingArea({ onBack }) {
         </div>
       </div>
 
-      {/* GRID VIEW - FIXED VISIBILITY */}
+      {/* GRID VIEW */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
         {settings.map((s) => (
           <motion.div layout key={s.id} className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-            {/* Left Status Bar */}
             <div className={`absolute top-0 left-0 w-1 h-full ${s.active ? 'bg-blue-600' : 'bg-slate-200'}`}></div>
             
             <div className="flex justify-between items-start mb-4">
               <div className="max-w-[180px]">
-                {/* Title - Bold Black */}
                 <h4 className="font-black text-slate-900 uppercase text-xs mb-2 truncate leading-tight">
                   {s.name || "Untitled Profile"}
                 </h4>
-                {/* Metadata - Visible Gray */}
                 <div className="flex flex-wrap gap-2">
                    <span className="text-[9px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-black uppercase tracking-tighter border border-slate-200">
                      {s.fps || 0} FPS
@@ -125,10 +122,13 @@ export default function VideoSettingArea({ onBack }) {
                    <span className="text-[9px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-black uppercase tracking-tighter border border-blue-100">
                      {s.width}x{s.height}
                    </span>
+                   {/* Badge for Timing Mode on card */}
+                   <span className="text-[9px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded font-black uppercase tracking-tighter border border-amber-100">
+                     {s.audioTimingMode || 'DYNAMIC'}
+                   </span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
               <div className="flex gap-1">
                 <button onClick={() => startEdit(s)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition">
                   <MdEdit size={18} />
@@ -139,11 +139,10 @@ export default function VideoSettingArea({ onBack }) {
               </div>
             </div>
 
-            {/* Timeline Visualizer */}
             <div className="space-y-1.5 mb-4">
                <div className="flex justify-between items-center text-[8px] font-black text-slate-400 uppercase">
-                  <span>Timeline Flow</span>
-                  <span className="text-blue-600 font-mono tracking-widest bg-blue-50 px-1 rounded">{s.sequence || "---"}</span>
+                 <span>Timeline Flow</span>
+                 <span className="text-blue-600 font-mono tracking-widest bg-blue-50 px-1 rounded">{s.sequence || "---"}</span>
                </div>
                <div className="flex items-center gap-1 h-6 bg-slate-50 rounded-md p-1 border border-slate-100">
                   {s.introPresent && <div className="h-full flex-1 bg-indigo-500 rounded-sm" />}
@@ -162,9 +161,9 @@ export default function VideoSettingArea({ onBack }) {
                   </span>
                </div>
                <div className="flex flex-col items-end">
-                  <span className="text-[7px] font-black text-slate-300 uppercase leading-none">Audio</span>
+                  <span className="text-[7px] font-black text-slate-300 uppercase leading-none">Audio Engine</span>
                   <span className={`text-[9px] font-bold ${s.isAudio ? 'text-emerald-600' : 'text-slate-300'}`}>
-                    {s.isAudio ? 'ENABLED' : 'MUTED'}
+                    {s.isAudio ? (s.audioTimingMode || 'ENABLED') : 'MUTED'}
                   </span>
                </div>
             </div>
@@ -263,17 +262,37 @@ export default function VideoSettingArea({ onBack }) {
                         </button>
                       </div>
 
-                      <div className={`grid grid-cols-4 gap-3 transition-all ${formData.isAudio ? 'opacity-100' : 'opacity-20 pointer-events-none'}`}>
-                        <div className="col-span-1">
-                           <label className="text-[8px] font-black text-blue-400 uppercase mb-1 block">Vol %</label>
-                           <input type="number" className="w-full text-[10px] font-black p-2 rounded-lg border-2 border-white bg-white shadow-sm outline-none focus:border-blue-400" 
-                            value={formData.audioVolumne ?? ""} onChange={e => setFormData({...formData, audioVolumne: e.target.value})} />
+                      <div className={`space-y-4 transition-all ${formData.isAudio ? 'opacity-100' : 'opacity-20 pointer-events-none'}`}>
+                        {/* Audio Timing Mode Selector - NEW UI */}
+                        <div className="space-y-1">
+                          <label className="text-[8px] font-black text-blue-400 uppercase ml-1 flex items-center gap-1">
+                            <MdWaves size={10}/> Audio Timing Mode
+                          </label>
+                          <div className="flex bg-white rounded-xl p-1 border border-blue-100 shadow-sm">
+                            {['DYNAMIC', 'EQUAL'].map((mode) => (
+                              <button
+                                key={mode}
+                                onClick={() => setFormData({...formData, audioTimingMode: mode})}
+                                className={`flex-1 py-1.5 text-[9px] font-black rounded-lg transition-all ${formData.audioTimingMode === mode ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-50'}`}
+                              >
+                                {mode}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                        <div className="col-span-3">
-                           <label className="text-[8px] font-black text-blue-400 uppercase mb-1 block">Multimedia UUID</label>
-                           <input type="text" className="w-full text-[9px] font-mono font-bold p-2 rounded-lg border-2 border-white bg-white shadow-sm outline-none focus:border-blue-400"
-                            placeholder="0000-0000..."
-                            value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
+
+                        <div className="grid grid-cols-4 gap-3">
+                          <div className="col-span-1">
+                             <label className="text-[8px] font-black text-blue-400 uppercase mb-1 block">Vol %</label>
+                             <input type="number" className="w-full text-[10px] font-black p-2 rounded-lg border-2 border-white bg-white shadow-sm outline-none focus:border-blue-400" 
+                              value={formData.audioVolumne ?? ""} onChange={e => setFormData({...formData, audioVolumne: e.target.value})} />
+                          </div>
+                          <div className="col-span-3">
+                             <label className="text-[8px] font-black text-blue-400 uppercase mb-1 block">Multimedia UUID</label>
+                             <input type="text" className="w-full text-[9px] font-mono font-bold p-2 rounded-lg border-2 border-white bg-white shadow-sm outline-none focus:border-blue-400"
+                              placeholder="0000-0000..."
+                              value={formData.audioMultiMediaKey || ""} onChange={e => setFormData({...formData, audioMultiMediaKey: e.target.value})} />
+                          </div>
                         </div>
                       </div>
                    </div>

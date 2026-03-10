@@ -102,9 +102,6 @@ export default function StockProvider({ children }) {
 
     if (login && userDetails?.token) {
       fetchStocks();
-      intervalRef.current = setInterval(() => {
-        fetchStocks();
-      }, 30_000);
     } else {
       setStocks([]);
       clearStockHistory();
