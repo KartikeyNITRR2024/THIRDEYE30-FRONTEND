@@ -13,7 +13,7 @@ export default function VideoProvider({ children }) {
     notifyLoading, 
     closeLoading, 
     notifySuccess,
-    notifyConfirm // Standardized custom confirmation
+    notifyConfirm 
   } = useContext(NotificationContext);
   
   const [videoList, setVideoList] = useState([]);
@@ -33,12 +33,10 @@ export default function VideoProvider({ children }) {
     return `${getBase()}vm2/multimedia/view/${uuid}`;
   };
 
-  // UI Helper: Calculate pending items
   const pendingVideosCount = useMemo(() => {
     return videoList.filter(v => !v.isCompleted).length;
   }, [videoList]);
 
-  // FETCH ALL - Standardized: No silent refresh, captures backend errors
   const fetchVideos = useCallback(async () => {
     if (!userDetails?.token) return;
     notifyLoading("Syncing Video Queue...");
@@ -62,7 +60,6 @@ export default function VideoProvider({ children }) {
     }
   }, [userDetails?.token]);
 
-  // ADD VIDEO
   const addVideo = async (videoData) => {
     if (!userDetails?.token) return;
     notifyLoading("Initializing Video Generation...");
@@ -74,7 +71,7 @@ export default function VideoProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Created Successfully");
-        await fetchVideos(); // Full refresh for UI transparency
+        await fetchVideos();
         return true;
       } else {
         await notifyError(data.errorMessage || "Video Creation Failed");
@@ -86,7 +83,6 @@ export default function VideoProvider({ children }) {
     }
   };
 
-  // UPDATE VIDEO
   const updateVideo = async (id, videoData) => {
     if (!userDetails?.token) return;
     notifyLoading("Updating Video Settings...");
@@ -98,7 +94,7 @@ export default function VideoProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Updated Successfully");
-        await fetchVideos(); // Full refresh
+        await fetchVideos();
         return true;
       } else {
         await notifyError(data.errorMessage || "Video Update Failed");
@@ -111,11 +107,9 @@ export default function VideoProvider({ children }) {
     }
   };
 
-  // DELETE VIDEO - Updated with notifyConfirm
   const deleteVideo = async (id) => {
     if (!userDetails?.token || !id) return;
-
-    const ok = await notifyConfirm("Are you sure you want to delete this video? This cannot be undone.");
+    const ok = await notifyConfirm("Are you sure you want to delete this video?");
     if (!ok) return;
 
     notifyLoading("Removing Video...");
@@ -126,7 +120,7 @@ export default function VideoProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Deleted Successfully");
-        await fetchVideos(); // Ensure list is 100% accurate
+        await fetchVideos();
       } else {
         await notifyError(data.errorMessage || "Video Delete Failed");
       }

@@ -17,6 +17,8 @@ import {
   MdContentCopy,
   MdAudiotrack,
   MdGraphicEq,
+  MdLanguage,
+  MdShortText,
 } from "react-icons/md";
 import { AnimatePresence, motion } from "framer-motion";
 import VideoContext from "../../../contexts/VideoCreater/Videos/VideoContext";
@@ -48,6 +50,11 @@ export default function VideoDetailsArea({ onBack }) {
     outroSubHeader: "",
     isbarGraphJsonMultiMediaKeyUploaded: false,
     barGraphJsonMultiMediaKey: "",
+    // --- NEW FIELDS ---
+    isBarGraphFooterPresent: false,
+    barGraphRaceFooter: "",
+    language: "ENGLISH",
+    // ------------------
     introAudioString: "",
     isIntroAudioStringPresent: false,
     isIntroAudioStringUploaded: false,
@@ -144,12 +151,15 @@ export default function VideoDetailsArea({ onBack }) {
                   <h4 className="font-black text-slate-800 uppercase text-xs mb-1 truncate">
                     {video?.name || "Unlinked Project"}
                   </h4>
-                  <button
-                    onClick={() => copyToClipboard(d.id, "Metadata ID Copied")}
-                    className="flex items-center gap-1 text-[8px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-tighter hover:bg-slate-900 hover:text-white transition"
-                  >
-                    <MdFingerprint size={10} /> {d.id.slice(0, 8)}
-                  </button>
+                  <div className="flex gap-1 items-center">
+                    <button
+                        onClick={() => copyToClipboard(d.id, "Metadata ID Copied")}
+                        className="flex items-center gap-1 text-[8px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded font-black uppercase tracking-tighter hover:bg-slate-900 hover:text-white transition"
+                    >
+                        <MdFingerprint size={10} /> {d.id.slice(0, 8)}
+                    </button>
+                    <span className="text-[7px] font-black bg-sky-100 text-sky-600 px-1 rounded uppercase">{d.language}</span>
+                  </div>
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => startEdit(d)} className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition">
@@ -175,6 +185,12 @@ export default function VideoDetailsArea({ onBack }) {
                     <MdAudiotrack className={d.isOutroAudioStringUploaded ? "text-emerald-500" : "text-slate-300"} size={14} />
                     <span className="text-[8px] font-black uppercase text-slate-400">Outro</span>
                   </div>
+                  {d.isBarGraphFooterPresent && (
+                    <div className="flex items-center gap-1">
+                        <MdShortText className="text-sky-500" size={14} />
+                        <span className="text-[8px] font-black uppercase text-slate-400">Footer</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
@@ -214,6 +230,35 @@ export default function VideoDetailsArea({ onBack }) {
                     <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Hero Title</label>
                     <input type="text" placeholder="Visual Heading..." className="w-full border-2 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-slate-800 transition" value={formData.header} onChange={(e) => setFormData({ ...formData, header: e.target.value })} />
                   </div>
+                </div>
+
+                {/* NEW CONFIGURATION FIELDS: Language and Footer */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-sky-50/50 p-4 rounded-2xl border border-sky-100">
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black text-sky-600 uppercase ml-1 flex items-center gap-1"><MdLanguage /> Language</label>
+                        <select 
+                            className="w-full border-2 rounded-xl px-4 py-2.5 text-xs font-bold bg-white outline-none focus:border-sky-500 transition"
+                            value={formData.language}
+                            onChange={(e) => setFormData({ ...formData, language: e.target.value })}
+                        >
+                            <option value="ENGLISH">ENGLISH</option>
+                            <option value="HINGLISH">HINGLISH</option>
+                        </select>
+                    </div>
+                    <div className="space-y-1">
+                        <label className="text-[9px] font-black text-sky-600 uppercase ml-1 flex items-center gap-1"><MdShortText /> Bar Graph Footer</label>
+                        <input 
+                            type="text" 
+                            placeholder="Footer Text..." 
+                            className="w-full border-2 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-sky-500 transition" 
+                            value={formData.barGraphRaceFooter} 
+                            onChange={(e) => setFormData({ 
+                                ...formData, 
+                                barGraphRaceFooter: e.target.value,
+                                isBarGraphFooterPresent: !!e.target.value 
+                            })} 
+                        />
+                    </div>
                 </div>
 
                 {/* TEXT OVERLAYS */}

@@ -3,7 +3,7 @@ import {
   MdArrowBack, MdRefresh, MdEdit, MdDelete, MdCheckCircle, 
   MdRadioButtonUnchecked, MdClose, MdFormatColorFill, 
   MdTextFields, MdImage, MdMusicNote, MdSettings, MdAdd,
-  MdLayers, MdPalette, MdOutlineTextFields, MdStraighten
+  MdLayers, MdPalette, MdOutlineTextFields, MdStraighten, MdBusiness
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import IntroVideoContext from "../../../contexts/VideoCreater/IntroVideo/IntroVideoContext";
@@ -14,7 +14,7 @@ export default function IntroVideoArea({ onBack }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
 
-  // 1. Initial State - Everything strictly null/false for Java DTO compatibility
+  // 1. Updated Initial State - Including Company Name fields
   const emptyForm = {
     name: null, 
     description: null, 
@@ -40,7 +40,12 @@ export default function IntroVideoArea({ onBack }) {
     adImageWidth: null, 
     isAudio: false, 
     audioMultiMediaKey: null, 
-    audioVolumne: null 
+    audioVolumne: null,
+    // NEW FIELDS
+    iscompanyNamePresent: false,
+    companyNamefontSize: null,
+    companyNamefontColor: null,
+    companyNamefontName: null
   };
 
   const [formData, setFormData] = useState(emptyForm);
@@ -60,12 +65,13 @@ export default function IntroVideoArea({ onBack }) {
   const handleSubmit = async () => {
     if (!formData.name) return;
 
-    // Casting logic for the payload
+    // Casting logic for the payload - including new numeric field
     const payload = {
       ...formData,
       backgroundOpacity: formData.backgroundOpacity ? parseFloat(formData.backgroundOpacity) : 0,
       headerSize: formData.headerSize ? parseInt(formData.headerSize) : 0,
       subHeaderSize: formData.subHeaderSize ? parseInt(formData.subHeaderSize) : 0,
+      companyNamefontSize: formData.companyNamefontSize ? parseInt(formData.companyNamefontSize) : 0,
       lineWidth: formData.lineWidth ? parseInt(formData.lineWidth) : 0,
       adImageWidth: formData.adImageWidth ? parseInt(formData.adImageWidth) : 0,
       adImageHeight: formData.adImageHeight ? parseInt(formData.adImageHeight) : 0,
@@ -160,6 +166,7 @@ export default function IntroVideoArea({ onBack }) {
                <div className="flex gap-1">
                   {intro.isLinePresent && <MdLayers className="text-rose-400" size={14}/>}
                   {intro.isBackgroundImage && <MdImage className="text-blue-400" size={14}/>}
+                  {intro.iscompanyNamePresent && <MdBusiness className="text-amber-500" size={14}/>}
                </div>
             </div>
           </motion.div>
@@ -171,7 +178,7 @@ export default function IntroVideoArea({ onBack }) {
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} 
-              className="bg-white w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
+              className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl overflow-hidden border border-white/20">
               
               <div className="p-6 border-b flex justify-between items-center bg-slate-50/50">
                 <div className="flex items-center gap-3">
@@ -238,7 +245,7 @@ export default function IntroVideoArea({ onBack }) {
                     </section>
 
                     {/* Subheader Section */}
-                    <section className="space-y-4 pt-4">
+                    <section className="space-y-4 pt-4 border-t border-slate-50">
                       <div className="flex justify-between items-center border-b border-slate-100 pb-2">
                         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><MdOutlineTextFields size={16}/> Sub Header</label>
                         <input type="checkbox" className="w-4 h-4 accent-slate-900" checked={formData.isSubHeaderPresent} onChange={e => setFormData({...formData, isSubHeaderPresent: e.target.checked})} />
@@ -249,9 +256,21 @@ export default function IntroVideoArea({ onBack }) {
                            <input type="color" className="w-10 h-9 rounded" value={formData.subHeaderColor || "#CCCCCC"} onChange={e => setFormData({...formData, subHeaderColor: e.target.value})} />
                            <input type="number" placeholder="Size" className="flex-1 border rounded-lg p-2 text-xs font-black" value={formData.subHeaderSize || ""} onChange={e => setFormData({...formData, subHeaderSize: e.target.value})} />
                         </div>
-                        <select className="w-full border rounded-lg p-2 text-[10px] font-black uppercase bg-slate-50" value={formData.subHeaderFontType || ""} onChange={e => setFormData({...formData, subHeaderFontType: e.target.value})}>
-                          <option value="">Select Type</option><option value="NORMAL">Normal</option><option value="BOLD">Bold</option><option value="ITALIC">Italic</option>
-                        </select>
+                      </div>
+                    </section>
+
+                    {/* NEW: Company Name Section */}
+                    <section className="space-y-4 pt-4 border-t border-slate-50">
+                      <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><MdBusiness size={16}/> Company Name</label>
+                        <input type="checkbox" className="w-4 h-4 accent-amber-500" checked={formData.iscompanyNamePresent} onChange={e => setFormData({...formData, iscompanyNamePresent: e.target.checked})} />
+                      </div>
+                      <div className={`space-y-3 ${!formData.iscompanyNamePresent && 'opacity-20 pointer-events-none'}`}>
+                        <input type="text" placeholder="Company Font Name" className="w-full border rounded-lg p-2 text-[10px] font-bold" value={formData.companyNamefontName || ""} onChange={e => setFormData({...formData, companyNamefontName: e.target.value})} />
+                        <div className="flex gap-2">
+                           <input type="color" className="w-10 h-9 rounded" value={formData.companyNamefontColor || "#FFFFFF"} onChange={e => setFormData({...formData, companyNamefontColor: e.target.value})} />
+                           <input type="number" placeholder="Size" className="flex-1 border rounded-lg p-2 text-xs font-black" value={formData.companyNamefontSize || ""} onChange={e => setFormData({...formData, companyNamefontSize: e.target.value})} />
+                        </div>
                       </div>
                     </section>
                 </div>

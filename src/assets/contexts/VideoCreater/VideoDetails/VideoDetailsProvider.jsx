@@ -13,19 +13,17 @@ export default function VideoDetailsProvider({ children }) {
     notifyLoading, 
     closeLoading, 
     notifySuccess,
-    notifyConfirm // Standardized custom confirmation
+    notifyConfirm 
   } = useContext(NotificationContext);
   
   const [detailsList, setDetailsList] = useState([]);
   const api = new ApiCaller();
 
-  // Standardized header helper
   const getHeaders = () => ({
     "Content-Type": "application/json",
     token: userDetails.token,
   });
 
-  // FETCH ALL - Standardized: No silent refresh, captures backend errors
   const fetchAllDetails = useCallback(async () => {
     if (!userDetails?.token) return;
     notifyLoading("Syncing Video Library...");
@@ -46,7 +44,6 @@ export default function VideoDetailsProvider({ children }) {
     }
   }, [userDetails?.token]);
 
-  // CREATE
   const createDetails = async (dto) => {
     if (!userDetails?.token) return;
     notifyLoading("Saving Video Details...");
@@ -58,7 +55,7 @@ export default function VideoDetailsProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Details Saved Successfully");
-        await fetchAllDetails(); // Full refresh for UI transparency
+        await fetchAllDetails();
         return true;
       } else {
         await notifyError(data.errorMessage || "Failed to Save Video Details");
@@ -70,7 +67,6 @@ export default function VideoDetailsProvider({ children }) {
     }
   };
 
-  // UPDATE
   const updateDetails = async (id, dto) => {
     if (!userDetails?.token) return;
     notifyLoading("Updating Video Details...");
@@ -82,7 +78,7 @@ export default function VideoDetailsProvider({ children }) {
       });
       if (data.success) {
         notifySuccess("Video Details Updated Successfully");
-        await fetchAllDetails(); // Full refresh
+        await fetchAllDetails();
         return true;
       } else {
         await notifyError(data.errorMessage || "Update Failed");
@@ -96,7 +92,6 @@ export default function VideoDetailsProvider({ children }) {
     }
   };
 
-  // DELETE - Updated with notifyConfirm
   const deleteDetails = async (id) => {
     if (!userDetails?.token || !id) return;
 
